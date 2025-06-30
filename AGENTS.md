@@ -34,6 +34,7 @@ Develop a trading analysis and recommendation system for Gold, Silver, and Plati
 *   **`analyzer.py`**:
     *   Document all analytical methods used in `ANALYSIS_METHODOLOGY.md`.
     *   Be creative in analyzing relationships between metals.
+    *   For statistical tests (e.g., ADF, Johansen), ensure the output is user-friendly, clearly explaining the null hypothesis, test statistics, p-values (if applicable), critical values, and the conclusion drawn from the test. The goal is to make complex statistical output understandable to a non-expert user.
 *   **`backtester.py`**:
     *   Provide clear metrics for backtest performance.
     *   Make backtesting an optional feature for the user.

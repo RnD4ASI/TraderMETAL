@@ -54,8 +54,21 @@ The application is run from the command line from within the `trading_system` di
    ```
    The cleansed and combined data (e.g., `cleaned_combined_daily_prices.csv`) will be saved in the `trading_system/data/` directory.
 
-**(Further steps for analysis, backtesting, and recommendations will be added as they are implemented.)**
+**3. Perform Multivariate Analysis (Stationarity and Cointegration):**
+
+   Use the `analyze-mv` command to perform initial multivariate analysis on the cleaned data. This involves:
+   *   Testing each metal's price series (or returns) for stationarity using the Augmented Dickey-Fuller (ADF) test.
+   *   Performing a Johansen cointegration test on the price levels to identify potential long-run equilibrium relationships between Gold, Silver, and Platinum.
+   You will be prompted to choose the data frequency (daily/weekly) and whether to analyze price levels or percentage returns.
+
+   ```bash
+   cd trading_system
+   python main.py analyze-mv
+   ```
+   The results of these tests, including interpretations, will be printed to the console. This helps in understanding the time series properties and guides the selection of appropriate models (like VAR or VECM) for more advanced forecasting.
+
+**(Further steps for detailed VAR/VECM modeling, univariate analysis, backtesting, and recommendations will be added as they are implemented.)**
 
 ## Analysis Methodology
 
-(Link to or content of `ANALYSIS_METHODOLOGY.md` to be added)
+For detailed information on the analytical methods used, including data preprocessing, technical indicators, and multivariate analysis techniques like stationarity (ADF) and cointegration (Johansen) tests, please refer to the [ANALYSIS_METHODOLOGY.md](ANALYSIS_METHODOLOGY.md) file.

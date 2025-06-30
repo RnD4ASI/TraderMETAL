@@ -1,6 +1,7 @@
 import click
 from src import data_crawler
-from src import data_cleanser # Import the new module
+from src import data_cleanser
+from src import analyzer # Import the analyzer module
 
 @click.group()
 def cli():
@@ -16,10 +17,9 @@ def fetch_data():
     You will be prompted to enter the start date, end date, and data frequency (daily/weekly).
     The maximum time window is 10 years.
     """
-    click.echo("Starting data fetching process...")
+    # click.echo("Starting data fetching process...") # Message now in data_crawler
     try:
         data_crawler.run_data_crawl()
-        # Message is now part of data_crawler's run_data_crawl
     except Exception as e:
         click.echo(f"An error occurred during the data fetching workflow: {e}", err=True)
 
@@ -32,20 +32,34 @@ def clean_data():
     You will be prompted to specify the frequency (daily/weekly) of the
     raw data you wish to cleanse.
     """
-    click.echo("Starting data cleansing process...")
+    # click.echo("Starting data cleansing process...") # Message now in data_cleanser
     try:
         data_cleanser.run_data_cleansing()
-        # Message is now part of data_cleanser's run_data_cleansing
     except Exception as e:
         click.echo(f"An error occurred during the data cleansing workflow: {e}", err=True)
 
-# Future commands can be added here:
+@cli.command()
+def analyze_mv():
+    """
+    Performs multivariate analysis on the cleaned data.
+    This includes stationarity tests (ADF) on price levels or returns,
+    and a Johansen cointegration test on price levels to identify
+    long-run relationships between Gold, Silver, and Platinum.
+    """
+    # click.echo("Starting multivariate analysis...") # Message now in analyzer
+    try:
+        analyzer.run_multivariate_analysis()
+    except Exception as e:
+        click.echo(f"An error occurred during the multivariate analysis workflow: {e}", err=True)
+
+
+# Future commands for univariate analysis, backtesting etc. can be added here:
 # @cli.command()
-# def analyze():
-#     """Runs analysis and forecasting."""
-#     click.echo("Starting analysis and forecasting...")
-#     # Call analyzer.run_analysis() here
-#     click.echo("Analysis and forecasting completed.")
+# def analyze_uni():
+#     """Runs univariate analysis and forecasting."""
+#     click.echo("Starting univariate analysis and forecasting...")
+#     # Call analyzer.run_univariate_analysis() here
+#     click.echo("Univariate analysis and forecasting completed.")
 
 # @cli.command()
 # def recommend():

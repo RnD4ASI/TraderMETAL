@@ -81,17 +81,73 @@ The following technical indicators and analysis techniques will be implemented. 
     *   **Usage**: Helps understand how the metals move in relation to each other. A high positive correlation means they tend to move in the same direction, while a negative correlation means they move in opposite directions.
     *   **Default Window**: 60-day or 90-day rolling correlation.
 
-## 3. Forecasting Models (Initial Implementation)
+## 3. Multivariate Time Series Analysis
+
+This section details advanced techniques used to model and understand the interdependencies between the prices of Gold, Silver, and Platinum. The initial implementation will focus on stationarity testing and cointegration analysis, which are foundational for selecting appropriate multivariate models like VAR or VECM.
+
+### 3.1. Stationarity Testing
+
+*   **Concept**: A time series is stationary if its statistical properties (mean, variance, autocorrelation) are constant over time. Most time series models, including those used in multivariate analysis, assume stationarity. Price series of financial assets are often non-stationary (exhibiting trends or unit roots).
+*   **Methodology - Augmented Dickey-Fuller (ADF) Test**:
+    *   The ADF test is used to test for a unit root in a time series sample.
+    *   **Null Hypothesis (H0)**: The time series has a unit root (it is non-stationary).
+    *   **Alternative Hypothesis (H1)**: The time series does not have a unit root (it is stationary).
+*   **Interpretation**:
+    *   The test produces a test statistic, a p-value, and critical values for different confidence levels.
+    *   If the p-value is less than a chosen significance level (e.g., 0.05), or if the test statistic is more negative than the critical values, the null hypothesis is rejected, and the series is considered stationary.
+    *   If price series are found to be non-stationary, their first differences (returns) are often tested, as returns are typically stationary.
+
+### 3.2. Cointegration Analysis
+
+*   **Concept**: If two or more non-stationary time series are cointegrated, it means there is a long-run, statistically significant equilibrium relationship between them, even if they diverge in the short term. A linear combination of these series is stationary.
+*   **Methodology - Johansen Test**:
+    *   The Johansen test is a procedure for testing cointegration of several I(1) (integrated of order 1, i.e., non-stationary but their first difference is stationary) time series.
+    *   It can determine the number of cointegrating relationships (cointegrating rank) within a group of time series.
+    *   **Deterministic Trend Assumption**: The test can be run with different assumptions about the deterministic trend in the data (e.g., no trend, constant, constant and linear trend). The initial implementation will primarily use a constant (`det_order = 0`).
+    *   **Lag Order**: The test requires specifying the number of lagged differences (`k_ar_diff`) in the underlying VAR model. This can be determined using information criteria (AIC, BIC) on a preliminary VAR.
+*   **Interpretation**:
+    *   The Johansen test produces two main statistics:
+        *   **Trace Statistic**: Tests the null hypothesis that the number of cointegrating vectors is less than or equal to `r` against an alternative that it is greater than `r`.
+        *   **Maximum Eigenvalue Statistic**: Tests the null hypothesis that the number of cointegrating vectors is `r` against an alternative of `r+1`.
+    *   For each statistic, it's compared against critical values at given significance levels (e.g., 90%, 95%, 99%).
+    *   The number of cointegrating relationships is determined by sequentially testing from `r=0` up to `r=n-1` (where `n` is the number of time series). The first non-rejection of the null hypothesis for each statistic indicates the rank. Often, both statistics are considered.
+
+### 3.3. Vector Autoregression (VAR) Models
+
+*   **Concept**: VAR models are used to capture the linear interdependencies among multiple time series. Each variable in a VAR has an equation explaining its evolution based on its own lagged values and the lagged values of the other variables in the model.
+*   **Applicability**:
+    *   Suitable for modeling multiple stationary time series.
+    *   If original price series are non-stationary and *not* cointegrated, VAR models can be applied to their first differences (returns).
+    *   If price series are non-stationary but cointegrated, a VECM is more appropriate.
+*   **Key Aspects (Future Enhancements)**:
+    *   **Lag Order Selection**: Determining the optimal number of lags using information criteria (AIC, BIC, HQIC).
+    *   **Model Estimation**: Estimating the coefficients of the VAR model.
+    *   **Stability Check**: Ensuring the estimated VAR model is stable (roots of the characteristic polynomial lie outside the unit circle).
+    *   **Granger Causality Tests**: To determine if past values of one series can predict current values of another.
+    *   **Impulse Response Functions (IRFs)**: To trace the effect of a shock (impulse) in one variable on itself and other variables in the system over time.
+    *   **Forecasting**: Generating joint forecasts for all variables in the system.
+
+### 3.4. Vector Error Correction Models (VECM)
+
+*   **Concept**: A VECM is a specialized VAR model designed for use with non-stationary time series that are found to be cointegrated. It incorporates the cointegrating relationships (long-run equilibrium) into the model, allowing for analysis of both short-term dynamics and long-term adjustments.
+*   **Applicability**: Used when time series (e.g., price levels) are non-stationary but cointegrated. The cointegration rank determined by the Johansen test is a key input (`k_ar_diff` in `statsmodels` VECM is the number of lags in differences, cointegration rank `r` is also specified).
+*   **Key Aspects (Future Enhancements)**:
+    *   The VECM includes "error correction" terms that represent deviations from the long-run equilibrium. The coefficients of these terms indicate the speed of adjustment back to equilibrium.
+    *   Similar analyses to VAR (IRFs, Granger causality, forecasting) can be performed within the VECM framework, but their interpretation is richer due to the presence of the long-run relationship.
+
+The initial implementation in `analyzer.py` will focus on performing stationarity tests (ADF) and cointegration tests (Johansen) to guide the choice of appropriate multivariate models for future development.
+
+## 4. Univariate Forecasting Models (Initial Implementation)
 
 *   **Autoregressive Integrated Moving Average (ARIMA)**:
     *   **Description**: A statistical model used for analyzing and forecasting time series data. It combines autoregression (AR), differencing (I for Integrated), and moving average (MA) components.
     *   **Parameter Selection**: (p, d, q) parameters will be determined using techniques like ACF (Autocorrelation Function) and PACF (Partial Autocorrelation Function) plots, or by using automated parameter selection algorithms (e.g., `auto_arima` if a suitable library is used).
-    *   **Usage**: To generate short-term price forecasts (e.g., 30, 60, 90 days).
+    *   **Usage**: To generate short-term price forecasts (e.g., 30, 60, 90 days) for individual metal series.
 *   **Exponential Smoothing (e.g., Holt-Winters)**:
     *   **Description**: Another widely used time series forecasting method that assigns exponentially decreasing weights to past observations. Holt-Winters can also model trend and seasonality.
-    *   **Usage**: Similar to ARIMA, for generating short-term price forecasts.
+    *   **Usage**: Similar to ARIMA, for generating short-term price forecasts for individual metal series.
 
-## 4. Backtesting Methodology
+## 5. Backtesting Methodology
 
 *   **Strategy Definition**: Users can define simple strategies based on signals from the implemented technical indicators (e.g., "Buy when 50-day SMA crosses above 200-day SMA," "Sell when price crosses below lower Bollinger Band").
 *   **Execution**: Trades are simulated based on historical data. Assumptions about transaction costs and slippage will be minimal in the initial version but can be added later.
@@ -102,16 +158,17 @@ The following technical indicators and analysis techniques will be implemented. 
     *   **Maximum Drawdown**: The largest peak-to-trough decline during a specific period, indicating downside risk.
     *   **Win Rate**: Percentage of profitable trades.
 
-## 5. Recommendation Logic
+## 6. Recommendation Logic
 
 *   **Signal Aggregation**: Recommendations (BUY, HOLD, SELL) will be generated by aggregating signals from:
     *   Trend indicators (e.g., price above/below key SMAs/EMAs, SMA crossovers).
     *   Volatility indicators (e.g., price relative to Bollinger Bands).
-    *   Forecasting models (e.g., predicted price movement).
+    *   Forecasting models (e.g., predicted price movement from univariate or multivariate models).
 *   **Weighting (Future Enhancement)**: Initially, a simple voting or rule-based system will be used. Future enhancements could involve weighting different signals based on their historical performance or user preference.
 *   **Confidence Level**: The confidence level might be derived from:
     *   The number of indicators confirming a particular signal.
     *   The strength of the signal (e.g., how far the price is from a moving average, or the probability output from a forecasting model).
-*   **Expected Return**: Based on the forecasts from ARIMA/Exponential Smoothing models for 30, 60, and 90-day horizons. The reliability of these long-range point forecasts will be clearly communicated as being indicative and subject to significant uncertainty.
+    *   Agreement between univariate and multivariate model outlooks.
+*   **Expected Return**: Based on the forecasts from implemented models for 30, 60, and 90-day horizons. The reliability of these forecasts will be clearly communicated as being indicative and subject to significant uncertainty.
 
 This document will be updated as new analytical methods are added or existing ones are refined.
