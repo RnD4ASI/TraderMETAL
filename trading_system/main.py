@@ -1,5 +1,6 @@
 import click
 from src import data_crawler
+from src import data_cleanser # Import the new module
 
 @click.group()
 def cli():
@@ -18,19 +19,27 @@ def fetch_data():
     click.echo("Starting data fetching process...")
     try:
         data_crawler.run_data_crawl()
-        click.echo("\nData fetching process completed.")
-        click.echo(f"Please check the '{data_crawler.DATA_DIR}/' directory for the output CSV files.")
+        # Message is now part of data_crawler's run_data_crawl
     except Exception as e:
-        click.echo(f"An error occurred during data fetching: {e}", err=True)
+        click.echo(f"An error occurred during the data fetching workflow: {e}", err=True)
+
+@cli.command()
+def clean_data():
+    """
+    Cleans the fetched raw data files for Gold, Silver, and Platinum.
+    This involves handling missing values, aligning dates, and merging
+    the data into a single CSV file.
+    You will be prompted to specify the frequency (daily/weekly) of the
+    raw data you wish to cleanse.
+    """
+    click.echo("Starting data cleansing process...")
+    try:
+        data_cleanser.run_data_cleansing()
+        # Message is now part of data_cleanser's run_data_cleansing
+    except Exception as e:
+        click.echo(f"An error occurred during the data cleansing workflow: {e}", err=True)
 
 # Future commands can be added here:
-# @cli.command()
-# def clean_data():
-#     """Cleans the fetched data."""
-#     click.echo("Starting data cleaning process...")
-#     # Call data_cleanser.run_cleaning() here
-#     click.echo("Data cleaning process completed.")
-
 # @cli.command()
 # def analyze():
 #     """Runs analysis and forecasting."""

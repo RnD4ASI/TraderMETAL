@@ -4,12 +4,40 @@ This document outlines the analytical methods used in the Trading Analysis and R
 
 ## 1. Data Preprocessing
 
-*   **Data Source**: Historical price data for Gold, Silver, and Platinum (e.g., from ETFs like GLD, SLV, PPLT or futures contracts) will be fetched using the `yfinance` library or a similar financial data API.
-*   **Frequency**: Users can select daily or weekly data.
-*   **Data Cleansing**:
-    *   **Missing Values**: Forward-fill (`ffill`) will be primarily used to handle missing data points, assuming the last known price is the best estimate for a non-trading day. Other methods like interpolation might be considered if `ffill` is insufficient.
-    *   **Alignment**: Data for all metals will be aligned by date to ensure comparability. This involves merging the datasets and handling dates where one metal might have data while another doesn't (typically by using an inner join or by forward-filling after an outer join).
-    *   **Outliers**: Initial implementation will focus on robust data sources. Extreme outlier detection (e.g., using standard deviation thresholds or IQR) might be added later if data quality issues are observed.
+*   **Data Source**: Historical price data for Gold, Silver, and Platinum (e.g., from ETFs like GLD, SLV, PPLT or futures contracts) will be fetched using the `yfinance` library or a similar financial data API. The raw data for each metal is stored in separate CSV files.
+*   **Frequency**: Users can select daily or weekly data for fetching and subsequent cleansing.
+*   **Data Cleansing Process**: The goal of the cleansing process is to produce a single, unified DataFrame containing the relevant price and volume data for all three metals, aligned by date, and ready for analysis.
+
+    1.  **Load Individual Metal Data**:
+        *   Raw CSV files for Gold, Silver, and Platinum (based on the user-selected frequency from the data crawling step) are loaded into separate pandas DataFrames.
+
+    2.  **Column Selection and Renaming**:
+        *   For each DataFrame, the 'Date' column is parsed and set as the index.
+        *   Relevant columns are selected: 'Adj Close' (Adjusted Close price) and 'Volume'.
+        *   To avoid ambiguity after merging, these columns are renamed to be metal-specific. For example, for Gold (GLD), 'Adj Close' becomes `GOLD_Adj Close` and 'Volume' becomes `GOLD_Volume`. This pattern is applied to Silver (e.g., `SILVER_Adj Close`) and Platinum (e.g., `PLATINUM_Adj Close`).
+
+    3.  **Handle Missing Values (Individual Series)**:
+        *   Missing values (NaNs) within each individual metal's time series are handled. The primary strategy is:
+            *   Forward-fill (`ffill`): Propagates the last valid observation forward.
+            *   Backward-fill (`bfill`): Fills remaining NaNs (typically at the beginning of the series if `ffill` couldn't fill them) with the next valid observation.
+        *   This step ensures that each metal's series is as complete as possible before merging.
+
+    4.  **Data Type Conversion**:
+        *   The Date index is ensured to be of datetime type (typically handled by `pd.read_csv` with `parse_dates` and `index_col`).
+        *   All price ('Adj Close') and 'Volume' columns are converted to `float` data type to ensure they are suitable for numerical calculations.
+
+    5.  **Merge DataFrames**:
+        *   The cleansed DataFrames for Gold, Silver, and Platinum are merged into a single DataFrame.
+        *   The merge is performed on the Date index using an `outer` join. This ensures that all dates present in any of the individual datasets are included in the final DataFrame.
+        *   After the outer join, it's possible that some metals might have NaN values on dates where other metals traded. These are handled by applying another round of `ffill` and then `bfill` on the merged DataFrame. This helps to align data on days where, for instance, one market might have been open while another was closed for a short period.
+
+    6.  **Final NaN Handling**:
+        *   After merging and subsequent `ffill`/`bfill`, any rows where all adjusted close price columns (`GOLD_Adj Close`, `SILVER_Adj Close`, `PLATINUM_Adj Close`) are *still* NaN are dropped. This typically removes dates at the very beginning or end of the overall period if no metal had data.
+
+    7.  **Save Cleansed Data**:
+        *   The final, combined, and cleansed DataFrame is saved to a new CSV file in the `data/` directory (e.g., `cleaned_combined_daily_prices.csv` or `cleaned_combined_weekly_prices.csv`).
+
+    *   **Outliers**: Initial implementation will focus on robust data sources and the described NaN handling. Explicit outlier detection and treatment (e.g., winsorization, clipping based on standard deviations or IQR) is not part of the initial cleansing step but can be considered as a future enhancement if data quality issues from the source prove problematic for analysis.
 
 ## 2. Technical Indicators and Analysis Techniques
 
