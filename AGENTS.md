@@ -34,6 +34,14 @@ Develop a trading analysis and recommendation system for Gold, Silver, and Plati
 *   **`analyzer.py`**:
     *   Document all analytical methods used in `ANALYSIS_METHODOLOGY.md`.
     *   Be creative in analyzing relationships between metals.
+    *   For statistical tests (e.g., ADF, Johansen), ensure the output is user-friendly, clearly explaining the null hypothesis, test statistics, p-values (if applicable), critical values, and the conclusion drawn from the test. The goal is to make complex statistical output understandable to a non-expert user.
+    *   **Deep Learning Specifics (within `analyzer.py` or a dedicated DL module):**
+        *   **Computational Cost:** Be mindful that training DL models (especially LSTMs) can be time-consuming and resource-intensive. Provide reasonable default parameters (epochs, batch size) for initial user experience.
+        *   **Data Requirements:** DL models generally require a substantial amount of historical data for effective training. The 10-year window is a good start, but performance might vary.
+        *   **Overfitting:** Implement measures to mitigate overfitting, such as Dropout layers and EarlyStopping callbacks during training. Emphasize the importance of evaluating on a separate test set.
+        *   **Hyperparameter Tuning:** While extensive hyperparameter optimization might be out of scope for the initial implementation, acknowledge that parameters like sequence length, LSTM units, learning rate, and batch size significantly impact performance and often require tuning.
+        *   **Reproducibility:** If possible, set random seeds for TensorFlow/NumPy to ensure reproducibility of model training results, though full reproducibility with DL can sometimes be challenging across different environments.
+        *   **Dependency Management:** Clearly note the `tensorflow` dependency.
 *   **`backtester.py`**:
     *   Provide clear metrics for backtest performance.
     *   Make backtesting an optional feature for the user.
