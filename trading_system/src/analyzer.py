@@ -1,7 +1,15 @@
 import pandas as pd
 import os
+import numpy as np
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.vector_ar.vecm import coint_johansen
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+
 from .data_cleanser import CLEANED_DATA_DIR # Using CLEANED_DATA_DIR from data_cleanser
 
 # Constants for column name patterns
@@ -317,3 +325,6 @@ if __name__ == "__main__":
         print(f"Dummy file {dummy_cleaned_file_path} created.")
 
     run_multivariate_analysis()
+    # To test deep learning part (if dummy file is suitable or if you fetch real data first):
+    # print("\nRunning Analyzer module directly for testing deep learning functions...")
+    # run_deep_learning_forecast() # This would require more setup for dummy data or real data

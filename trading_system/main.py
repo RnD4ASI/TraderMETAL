@@ -52,6 +52,27 @@ def analyze_mv():
     except Exception as e:
         click.echo(f"An error occurred during the multivariate analysis workflow: {e}", err=True)
 
+@cli.command()
+def analyze_dl():
+    """
+    Performs forecasting using a Deep Learning (LSTM) model.
+    You will be prompted for various parameters like target metal,
+    features, sequence length, forecast horizon, and training settings.
+    This command trains an LSTM model on historical data and provides
+    a forecast. Note: Requires TensorFlow to be installed.
+    """
+    # click.echo("Starting Deep Learning forecasting process...") # Message now in analyzer
+    try:
+        # Ensure TensorFlow is available before running, or let analyzer handle it
+        try:
+            import tensorflow
+        except ImportError:
+            click.echo("TensorFlow not found. Please install TensorFlow to use this feature: pip install tensorflow", err=True)
+            return
+        analyzer.run_deep_learning_forecast()
+    except Exception as e:
+        click.echo(f"An error occurred during the Deep Learning analysis workflow: {e}", err=True)
+
 
 # Future commands for univariate analysis, backtesting etc. can be added here:
 # @cli.command()

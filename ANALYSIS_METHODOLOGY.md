@@ -137,7 +137,9 @@ This section details advanced techniques used to model and understand the interd
 
 The initial implementation in `analyzer.py` will focus on performing stationarity tests (ADF) and cointegration tests (Johansen) to guide the choice of appropriate multivariate models for future development.
 
-## 4. Univariate Forecasting Models (Initial Implementation)
+## 4. Forecasting Models
+
+### 4.1 Univariate Forecasting Models (ARIMA, Exponential Smoothing)
 
 *   **Autoregressive Integrated Moving Average (ARIMA)**:
     *   **Description**: A statistical model used for analyzing and forecasting time series data. It combines autoregression (AR), differencing (I for Integrated), and moving average (MA) components.
@@ -146,6 +148,37 @@ The initial implementation in `analyzer.py` will focus on performing stationarit
 *   **Exponential Smoothing (e.g., Holt-Winters)**:
     *   **Description**: Another widely used time series forecasting method that assigns exponentially decreasing weights to past observations. Holt-Winters can also model trend and seasonality.
     *   **Usage**: Similar to ARIMA, for generating short-term price forecasts for individual metal series.
+
+### 4.2 Deep Learning Models for Forecasting (LSTM)
+
+*   **Concept - Long Short-Term Memory (LSTM) Networks**:
+    *   LSTMs are a type of Recurrent Neural Network (RNN) particularly well-suited for learning from sequential data like time series.
+    *   They are designed to overcome the vanishing gradient problem that can affect traditional RNNs, allowing them to learn long-range dependencies.
+    *   LSTMs use a system of "gates" (input, forget, output) within their memory cells to control the flow of information, deciding what to store, what to discard, and what to output.
+*   **Proposed Approach - Multivariate LSTM Forecasting**:
+    *   The initial implementation will focus on forecasting the adjusted close price of a single target metal (e.g., Gold).
+    *   Input features will include the historical adjusted close prices of all three metals (Gold, Silver, Platinum) and potentially their trading volumes. This allows the model to learn from inter-metal relationships.
+    *   Using price returns (percentage changes) instead of absolute price levels as input features will be considered, as returns are often more stationary and can lead to better model performance.
+*   **Data Preprocessing for LSTMs**:
+    *   **Feature Selection**: Choose relevant columns from the cleaned, combined dataset (e.g., `GOLD_Adj_Close`, `SILVER_Adj_Close`, `PLATINUM_Adj_Close`, `GOLD_Volume`, `SILVER_Volume`, `PLATINUM_Volume`).
+    *   **Scaling/Normalization**: All selected input features will be scaled, typically to a range of [0, 1] using `MinMaxScaler` from `scikit-learn`. The scaler is fitted *only* on the training dataset to prevent data leakage, and then used to transform the validation and test sets, as well as any new data for forecasting. The scaler for the target variable is stored separately to inverse-transform predictions back to their original scale.
+    *   **Sequence Creation**: Time series data is converted into sequences of a fixed length (`sequence_length` or lookback window). For example, using the last 60 days of data (features) to predict the next day's price (target). This creates `(X, y)` pairs where `X` is a 3D array (samples, timesteps, features) and `y` is the target value(s).
+    *   **Train/Validation/Test Split**: Data is split chronologically to respect the temporal order. A common split might be 70% for training, 10-15% for validation (tuning hyperparameters, early stopping), and 15-20% for final model evaluation (test set). There must be no overlap between these sets.
+*   **Model Architecture (Sample)**:
+    *   **Input Layer**: Defines the shape of the input sequences (`sequence_length`, `number_of_features`).
+    *   **LSTM Layer(s)**: One or more LSTM layers (e.g., `tf.keras.layers.LSTM`) with a specified number of units (neurons).
+    *   **Dropout Layer(s)**: `tf.keras.layers.Dropout` can be added after LSTM layers to reduce overfitting by randomly setting a fraction of input units to 0 during training.
+    *   **Dense Output Layer**: A fully connected `tf.keras.layers.Dense` layer with a number of units corresponding to the forecast horizon (e.g., 1 unit for predicting a single next step). A linear activation function is typically used for regression tasks like price forecasting.
+*   **Training Process**:
+    *   **Compilation**: The model is compiled with a loss function (e.g., Mean Squared Error - `MSE` for regression), an optimizer (e.g., `Adam`), and evaluation metrics (e.g., Root Mean Squared Error - `RMSE`, Mean Absolute Error - `MAE`).
+    *   **Fitting**: The model is trained using the `fit()` method on the training data (`X_train`, `y_train`), with the validation data (`X_val`, `y_val`) used to monitor performance.
+    *   **Early Stopping**: An `EarlyStopping` callback (`tf.keras.callbacks.EarlyStopping`) will be used to monitor the validation loss and stop training if it doesn't improve for a specified number of epochs (`patience`), preventing overfitting and saving training time. The weights of the best performing epoch on the validation set are typically restored.
+*   **Evaluation**:
+    *   The trained model's performance is assessed on the unseen test set (`X_test`, `y_test`).
+    *   Predictions are made, inverse-scaled to the original price/return domain, and then compared against the actual inverse-scaled target values using metrics like RMSE and MAE.
+*   **Forecasting**:
+    *   To predict future values, the most recent `sequence_length` of (scaled) data is fed into the trained model.
+    *   For multi-step forecasting (predicting more than one step ahead), an iterative approach might be used where the prediction for one step is fed back as an input for predicting the next step, or the model is trained to predict multiple steps directly. The initial implementation will likely focus on single-step or a short fixed-horizon forecast.
 
 ## 5. Backtesting Methodology
 

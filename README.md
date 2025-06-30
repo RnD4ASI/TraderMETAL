@@ -67,8 +67,21 @@ The application is run from the command line from within the `trading_system` di
    ```
    The results of these tests, including interpretations, will be printed to the console. This helps in understanding the time series properties and guides the selection of appropriate models (like VAR or VECM) for more advanced forecasting.
 
-**(Further steps for detailed VAR/VECM modeling, univariate analysis, backtesting, and recommendations will be added as they are implemented.)**
+**4. Perform Deep Learning Forecasting (LSTM):**
+
+   Use the `analyze-dl` command to train an LSTM (Long Short-Term Memory) neural network for forecasting. This model can capture complex non-linear patterns in the time series.
+   *   You will be prompted to select the target metal, feature columns (which can include prices/volumes of all three metals), sequence length (lookback window), forecast horizon, and training parameters (epochs, batch size).
+   *   The command will preprocess the data, build and train the LSTM model, evaluate it on a test set, and provide a forecast for the target metal.
+   *   **Note:** This feature requires `tensorflow` to be installed (`pip install tensorflow`). Training can be computationally intensive and time-consuming.
+
+   ```bash
+   cd trading_system
+   python main.py analyze-dl
+   ```
+   Model training progress, evaluation metrics (RMSE, MAE), and the final forecast will be printed to the console.
+
+**(Further steps for detailed VAR/VECM modeling, other univariate analyses, backtesting, and recommendations will be added as they are implemented.)**
 
 ## Analysis Methodology
 
-For detailed information on the analytical methods used, including data preprocessing, technical indicators, and multivariate analysis techniques like stationarity (ADF) and cointegration (Johansen) tests, please refer to the [ANALYSIS_METHODOLOGY.md](ANALYSIS_METHODOLOGY.md) file.
+For detailed information on the analytical methods used, including data preprocessing, technical indicators, multivariate analysis (ADF, Johansen tests), and deep learning forecasting (LSTM), please refer to the [ANALYSIS_METHODOLOGY.md](ANALYSIS_METHODOLOGY.md) file.

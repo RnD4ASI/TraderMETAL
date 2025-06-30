@@ -18,3 +18,6 @@ click # or argparse, starting with click as it's often more user-friendly
 
 # For date handling
 python-dateutil
+
+# Deep Learning
+tensorflow
