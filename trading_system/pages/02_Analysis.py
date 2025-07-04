@@ -60,42 +60,10 @@ with st.expander("Run Multivariate Analysis", expanded=True):
                     # analyzer.run_multivariate_analysis(frequency=analysis_freq, analysis_type='levels') # or 'returns'
                     # Since it's not refactored, we call it as is. User might need to interact with terminal.
 
-                    # HACK: Temporarily patch input for analyzer
-                    original_input = __builtins__.input
-                    user_responses = []
-
-                    # Inferring cleaned file name based on frequency
-                    cleaned_filename = f"cleaned_combined_{analysis_freq.lower()}_prices.csv"
-                    cleaned_filepath = os.path.join("trading_system/data", cleaned_filename) # Adjust path as needed by analyzer
-
-                    if not os.path.exists(cleaned_filepath):
-                        st.error(f"Cleaned data file not found: {cleaned_filepath}. Please run 'clean-data' first.")
-                    else:
-                        st.write(f"Using data from: `{cleaned_filepath}`")
-                        st.write("You might be prompted in the terminal to choose 'levels' or 'returns' for analysis.")
-
-                        def mock_input_analyzer(prompt_text):
-                            st.warning(f"Backend is asking: '{prompt_text}'")
-                            # Pre-determined response for Streamlit, or could add widgets
-                            if "frequency" in prompt_text.lower():
-                                response = analysis_freq
-                            elif "levels/returns" in prompt_text.lower():
-                                response = st.session_state.get('mv_analysis_type', 'levels') # Default to levels
-                                st.info(f"Auto-responding with: '{response}' for levels/returns choice. You can change this with a widget if needed.")
-                            else:
-                                response = "levels" # A default fallback
-                            st.text(f"Auto-replying with: {response}")
-                            return response
-
-                        # Add a selectbox for the levels/returns choice for a better UX
-                        st.session_state.mv_analysis_type = st.radio(
-                            "Select analysis type for Multivariate Analysis:",
-                            ('levels', 'returns'), key='mv_analysis_type_widget', index=0
-                        )
-
-                        __builtins__.input = mock_input_analyzer
-                        analyzer.run_multivariate_analysis() # This will now use the mocked input
-                        __builtins__.input = original_input # Restore
+                    st.error("Multivariate analysis requires refactoring of `analyzer.py` to accept parameters directly. This feature is currently not fully supported via the UI.")
+                    # TODO: Refactor analyzer.py to accept parameters for 'levels'/'returns' directly.
+                    # For now, this feature is not fully functional via the UI without manual terminal interaction.
+                    # Remove this HACK block once analyzer.py is refactored.
 
                     st.text_area("Log Output (Multivariate Analysis)", captured_output.getvalue(), height=300)
                     st.success("Multivariate analysis complete!")
