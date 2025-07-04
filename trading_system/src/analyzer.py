@@ -496,7 +496,38 @@ def run_deep_learning_forecast(
 
     if verbose:
         print("Training LSTM model...")
-    history = model.fit(
+if verbose:
+        print("Training LSTM model...")
+    try:
+        history = model.fit(
+            X_train, y_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_split=0.1, # Use 10% of training data for validation during training
+            callbacks=[early_stopping],
+            verbose=1 if verbose else 0
+        )
+
+        # 6. Evaluate Model
+        if verbose:
+            print("Evaluating model...")
+        predictions_scaled = model.predict(X_test)
+        predictions = scaler_target.inverse_transform(predictions_scaled)
+        y_test_inversed = scaler_target.inverse_transform(y_test.reshape(-1,1))
+
+        rmse = np.sqrt(mean_squared_error(y_test_inversed, predictions))
+        mae = mean_absolute_error(y_test_inversed, predictions)
+
+        if verbose:
+            print(f"Test RMSE: {rmse:.4f}")
+            print(f"Test MAE: {mae:.4f}")
+    except Exception as e:
+        if verbose:
+            print(f"Error during model training or evaluation: {str(e)}")
+        return {"error": f"Model training or evaluation failed: {str(e)}"}
+
+    # 7. Make Future Forecast (simple version: predict next N steps iteratively)
+    # This is a simplified way and has limitations (error accumulation)
         X_train, y_train,
         epochs=epochs,
         batch_size=batch_size,
