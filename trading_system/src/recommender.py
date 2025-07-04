@@ -57,7 +57,26 @@ class SimpleRecommender:
         # Example (very naive): If US_REAL_GDP_YOY_QUARTERLY is available and > 2.0, favorable.
         gdp_col = "US_REAL_GDP_YOY_QUARTERLY" # Example
         if gdp_col in self.data_df.columns and not self.data_df[gdp_col].empty:
-            latest_gdp = self.data_df[gdp_col].dropna().iloc[-1]
+# Example (very naive): If US_REAL_GDP_YOY_QUARTERLY is available and > 2.0, favorable.
+        gdp_col = "US_REAL_GDP_YOY_QUARTERLY" # Example
+        if gdp_col in self.data_df.columns and not self.data_df[gdp_col].empty:
+            try:
+                latest_gdp = self.data_df[gdp_col].dropna().iloc[-1]
+                if not pd.isna(latest_gdp) and isinstance(latest_gdp, (int, float)):
+                    if latest_gdp > 2.5: # Arbitrary threshold
+                        return "POSITIVE", f"Recent GDP ({latest_gdp:.2f}%) is strong."
+                    elif latest_gdp < 1.0: # Arbitrary threshold
+                        return "NEGATIVE", f"Recent GDP ({latest_gdp:.2f}%) is weak."
+                    else:
+                        return "NEUTRAL", f"Recent GDP ({latest_gdp:.2f}%) is moderate."
+                else:
+                    return "NEUTRAL", "Invalid GDP value encountered."
+            except Exception as e:
+                print(f"Error processing GDP data: {e}")
+                return "NEUTRAL", "Error in macro context analysis."
+        return "NEUTRAL", "Macro context not fully analyzed or data unavailable."
+
+    def get_overall_recommendation(self):
             if latest_gdp > 2.5: # Arbitrary threshold
                 return "POSITIVE", f"Recent GDP ({latest_gdp:.2f}%) is strong."
             elif latest_gdp < 1.0: # Arbitrary threshold
