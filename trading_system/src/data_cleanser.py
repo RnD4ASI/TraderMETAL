@@ -461,9 +461,10 @@ def run_merge_with_macro_data(metal_data_frequency):
         pd_target_freq = "W-FRI"
         # If df_metals is already weekly, we might want to use its exact dates.
         # For now, let's make sure df_metals itself is on this frequency if it's weekly.
-        if not pd.infer_freq(df_metals.index) == 'W-FRI': # Or other weekly freq
-             print(f"Warning: Metal data frequency is weekly, but not inferred as 'W-FRI'. Resampling metals to W-FRI.")
-             df_metals = df_metals.resample('W-FRI').last() # Use last observation in the week for metals
+        # If df_metals is already weekly, we might want to use its exact dates.
+        # For now, let's make sure df_metals itself is on this frequency if it's weekly.
+        # Consider ensuring consistent weekly frequency (e.g., W-FRI) during the initial data cleansing step
+        # to avoid potential re-resampling issues here.
     else:
         print(f"Error: Unsupported metal_data_frequency for merging: {metal_data_frequency}")
         return
