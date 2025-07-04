@@ -361,7 +361,15 @@ def create_dataset(X, y, sequence_length=60):
     Creates sequences and corresponding labels for LSTM model.
     """
     Xs, ys = [], []
-    for i in range(len(X) - sequence_length):
+"""
+    Creates sequences and corresponding labels for LSTM model.
+    """
+    Xs = np.array([X[i:i+sequence_length] for i in range(len(X) - sequence_length)])
+    ys = y[sequence_length:]
+    return Xs, ys
+
+def build_lstm_model(sequence_length, num_features, lstm_units=50, dropout_rate=0.2):
+    """
         Xs.append(X[i:(i + sequence_length)])
         ys.append(y[i + sequence_length])
     return np.array(Xs), np.array(ys)
