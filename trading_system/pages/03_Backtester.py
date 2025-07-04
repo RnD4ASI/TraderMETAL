@@ -62,7 +62,15 @@ try:
     temp_df_cols = pd.read_csv(data_file_path, nrows=0).columns.tolist()
     asset_price_cols = [col for col in temp_df_cols if "Adj_Close" in col] # Filter for price columns
 except Exception as e:
-    st.error(f"Could not read columns from {selected_data_file}: {e}")
+# Import html module for HTML escaping
+import html
+
+try:
+    temp_df_cols = pd.read_csv(data_file_path, nrows=0).columns.tolist()
+    asset_price_cols = [col for col in temp_df_cols if "Adj_Close" in col] # Filter for price columns
+except Exception as e:
+    st.error(f"Could not read columns from {html.escape(str(selected_data_file))}: {html.escape(str(e))}")
+    asset_price_cols = ["GOLD_Adj_Close", "SILVER_Adj_Close", "PLATINUM_Adj_Close"] # Fallback
     asset_price_cols = ["GOLD_Adj_Close", "SILVER_Adj_Close", "PLATINUM_Adj_Close"] # Fallback
 
 bt_asset_column = st.selectbox(
