@@ -301,7 +301,24 @@ def load_single_macro_indicator(indicator_details):
     filename_indicator_part = "_".join(indicator_details["name"].split("_")[1:]).lower()
 
     filename = f"{country_code}_{filename_indicator_part}_fred.csv"
-    filepath = os.path.join(DATA_DIR_MACRO, filename)
+filename_indicator_part = "_".join(indicator_details["name"].split("_")[1:]).lower()
+
+    filename = f"{country_code}_{filename_indicator_part}_fred.csv"
+    # Use os.path.normpath and os.path.abspath to sanitize the file path
+    # import os
+    filepath = os.path.normpath(os.path.join(DATA_DIR_MACRO, filename))
+    if not filepath.startswith(os.path.abspath(DATA_DIR_MACRO)):
+        print(f"Error: Invalid file path: {filepath}")
+        return None
+
+    if not os.path.exists(filepath):
+        print(f"Info: Macro data file not found, will be skipped: {filepath}")
+        return None
+    try:
+        df = pd.read_csv(filepath, index_col='Date', parse_dates=True)
+        if df.empty:
+            print(f"Warning: Macro data file is empty: {filepath}")
+            return None
 
     if not os.path.exists(filepath):
         print(f"Info: Macro data file not found, will be skipped: {filepath}")
