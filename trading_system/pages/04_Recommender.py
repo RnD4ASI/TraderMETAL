@@ -56,7 +56,15 @@ try:
     temp_df_cols_rec = pd.read_csv(data_file_path_rec, nrows=0).columns.tolist()
     asset_price_cols_rec = [col for col in temp_df_cols_rec if "Adj_Close" in col]
 except Exception as e:
-    st.error(f"Could not read columns from {selected_data_file_rec}: {e}")
+# Import html module for HTML escaping
+import html
+
+try:
+    temp_df_cols_rec = pd.read_csv(data_file_path_rec, nrows=0).columns.tolist()
+    asset_price_cols_rec = [col for col in temp_df_cols_rec if "Adj_Close" in col]
+except Exception as e:
+    st.error(f"Could not read columns from {html.escape(str(selected_data_file_rec))}: {html.escape(str(e))}")
+    asset_price_cols_rec = ["GOLD_Adj_Close", "SILVER_Adj_Close", "PLATINUM_Adj_Close"] # Fallback
     asset_price_cols_rec = ["GOLD_Adj_Close", "SILVER_Adj_Close", "PLATINUM_Adj_Close"] # Fallback
 
 
