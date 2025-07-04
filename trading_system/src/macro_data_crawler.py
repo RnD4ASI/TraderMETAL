@@ -160,7 +160,13 @@ def save_macro_data_to_csv(df, indicator_name, country_prefix):
         print(f"Created directory: {DATA_DIR_MACRO}")
 
     filename = f"{country_prefix.lower()}_{indicator_name.lower()}_fred.csv"
+os.makedirs(DATA_DIR_MACRO)
+        print(f"Created directory: {DATA_DIR_MACRO}")
+
+    filename = secure_filename(f"{country_prefix.lower()}_{indicator_name.lower()}_fred.csv")  # import werkzeug.security
     filepath = os.path.join(DATA_DIR_MACRO, filename)
+
+    try:
 
     try:
         df.to_csv(filepath)
