@@ -383,7 +383,35 @@ def run_deep_learning_forecast(
     data_file_path: str,
     target_metal_ticker: str, # e.g., "GOLD"
     feature_columns: list[str], # e.g., ["GOLD_Adj_Close", "SILVER_Adj_Close", "US_CPI_YOY"]
-    sequence_length: int = 60,
+model.add(Dense(units=1)) # Predicting a single value
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+def run_deep_learning_forecast(
+    data_file_path: str,
+    target_metal_ticker: str, # e.g., "GOLD"
+    feature_columns: list[str], # e.g., ["GOLD_Adj_Close", "SILVER_Adj_Close", "US_CPI_YOY"]
+    sequence_length: int = None,  # Changed from 60 to None
+    forecast_horizon: int = 30, # Not directly used in simple LSTM prediction structure, but good for context
+    epochs: int = 50,
+    batch_size: int = 32,
+    train_test_split_ratio: float = 0.8,
+    verbose: bool = True
+):
+    """
+    Orchestrates the Deep Learning (LSTM) forecasting process.
+
+    Args:
+        data_file_path (str): Path to the CSV data file (e.g., "final_combined_daily_data.csv").
+        target_metal_ticker (str): The ticker of the metal to forecast (e.g., "GOLD", "SILVER").
+                                   The target column will be assumed as f"{target_metal_ticker}{ADJ_CLOSE_SUFFIX}".
+        feature_columns (list[str]): List of column names to use as features.
+                                      The target column should also be included in this list if it's to be used as a feature.
+        sequence_length (int): Number of past time steps to use for predicting the next time step. If None, it will be determined based on the data.
+        forecast_horizon (int): Number of future days to forecast (conceptual, actual LSTM predicts next step).
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        train_test_split_ratio (float): Ratio for splitting data into training and testing sets.
     forecast_horizon: int = 30, # Not directly used in simple LSTM prediction structure, but good for context
     epochs: int = 50,
     batch_size: int = 32,
