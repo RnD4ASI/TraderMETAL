@@ -143,7 +143,7 @@ def recommend(data_file, asset, short_sma, long_sma):
     Uses SMA Crossover for technical signal and a placeholder for macro context.
     Requires the merged data file from 'merge-macro-data'.
     """
-    data_file_path = f"trading_system/data/{data_file}" # Assuming files are in data dir
+    data_file_path = os.path.join(data_cleanser.MERGED_DATA_DIR, data_file)
     try:
         recommender.run_recommendation_workflow(
             data_file_path=data_file_path,
