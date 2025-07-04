@@ -355,6 +355,29 @@ def run_merge_with_macro_data(metal_data_frequency):
     - Merges them with the metal prices.
     - Saves the final combined DataFrame.
     """
+    # Import statement for secure input validation
+    # import re  # Used for input validation
+
+    print(f"
+--- Merging Metal Prices with Macroeconomic Data ({metal_data_frequency} frequency) ---")
+
+    # Validate metal_data_frequency input
+    valid_frequencies = ['daily', 'weekly']
+    if not isinstance(metal_data_frequency, str) or metal_data_frequency.lower() not in valid_frequencies:
+        raise ValueError(f"Invalid metal_data_frequency. Must be one of {valid_frequencies}")
+
+    metal_data_frequency = metal_data_frequency.lower()
+
+    # Rest of the function remains unchanged
+    # ...
+    """
+    Orchestrates the merging of cleaned metal price data with processed macro data.
+    - Loads the `cleaned_combined_{metal_data_frequency}_prices.csv`.
+    - Loads all available macro indicators specified in MACRO_INDICATORS_FRED.
+    - Processes and resamples each macro indicator.
+    - Merges them with the metal prices.
+    - Saves the final combined DataFrame.
+    """
     print(f"\n--- Merging Metal Prices with Macroeconomic Data ({metal_data_frequency} frequency) ---")
 
     # 1. Load cleaned metal price data
