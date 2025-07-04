@@ -259,7 +259,7 @@ def run_macro_data_crawl(start_date_str=None, end_date_str=None, max_years_windo
         if fetch_format == "level" and base_freq_periods:
             # Fetch a bit more historical data for YoY calculation
             # Calculate how many years back needed based on periods (e.g., 12 monthly periods = 1 year)
-            years_back_for_yoy = (base_freq_periods / 12.0) if indicator_details["type"] == "cpi" else (base_freq_periods / 4.0) # crude
+            # Calculate how many years back needed based on periods (e.g., 12 monthly periods = 1 year)
 
             # Ensure we have enough data for the first YoY calculation point
             # e.g. for monthly CPI (12 periods), need 12 previous points. For quarterly GDP (4 periods), need 4 previous.
