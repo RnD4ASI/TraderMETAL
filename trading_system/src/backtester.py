@@ -194,8 +194,7 @@ def run_backtest(data_df, strategy_instance, initial_capital, transaction_cost_p
             current_position_units = units_to_buy
             portfolio.loc[date, 'cash'] = 0.0 # All cash used
             portfolio.loc[date, 'asset_position'] = current_position_units
-            portfolio.loc[date, 'trades'] += 1
-            print(f"{date.strftime('%Y-%m-%d')}: BUY signal. Price: ${price:,.2f}. Buying {units_to_buy:,.2f} units.")
+            num_trades_executed += 1
 
         # If target is FLAT (0.0) and currently LONG (>0 units)
         elif target_position_signal == 0.0 and current_position_units > 0:
