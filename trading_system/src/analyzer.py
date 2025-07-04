@@ -200,7 +200,33 @@ def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str 
         return {"error": f"Invalid analysis_type: {analysis_type}. Please use 'levels' or 'returns'."}
 
     cleaned_filename = f"cleaned_combined_{frequency.lower()}_prices.csv"
-    cleaned_filepath = os.path.join(data_dir, cleaned_filename)
+# Import os.path for secure path handling
+# Import pathlib for secure path validation
+import os.path
+from pathlib import Path
+
+def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str = CLEANED_DATA_DIR, verbose: bool = True):
+    # ... (previous code remains unchanged)
+
+    cleaned_filename = f"cleaned_combined_{frequency.lower()}_prices.csv"
+    
+    # Use os.path.abspath to get the absolute path and resolve any '..' in the path
+    data_dir_abs = os.path.abspath(data_dir)
+    
+    # Use Path to create a path object and resolve to its absolute path
+    cleaned_filepath = Path(data_dir_abs).resolve() / cleaned_filename
+    
+    # Ensure the resolved path is still within the intended directory
+    if not str(cleaned_filepath).startswith(str(Path(CLEANED_DATA_DIR).resolve())):
+        print(f"Error: Invalid data directory path: {data_dir}")
+        return
+
+    if not cleaned_filepath.exists():
+        print(f"Error: Cleaned data file not found: {cleaned_filepath}")
+        print("Please run the 'fetch-data' and 'clean-data' commands first.")
+        return
+
+    # ... (rest of the code remains unchanged)
     cleaned_filepath = os.path.join(CLEANED_DATA_DIR, cleaned_filename)
 
     if not os.path.exists(cleaned_filepath):
