@@ -137,7 +137,23 @@ if st.button("Get Recommendation", key="get_recommendation_btn"):
                     if recommendation_text == "BUY":
                         st.success(f"**{recommendation_text}**")
                     elif recommendation_text == "SELL":
-                        st.error(f"**{recommendation_text}**")
+st.caption(f"Based on data up to: {date_log}")
+
+                    if recommendation_text == "BUY":
+                        st.success("**BUY**")
+                    elif recommendation_text == "SELL":
+                        st.error("**SELL**")
+                    elif recommendation_text == "HOLD":
+                        st.warning("**HOLD**")
+                    else:
+                        st.info(f"**{html.escape(recommendation_text)}**")  # import html
+
+                    st.markdown("**Reasoning:**")
+                    st.markdown(f"> {html.escape(reason_text)}")  # import html
+
+                except Exception as e:
+                    st.error(f"Error during recommendation generation: {str(e)}")
+                    st.text_area("Error Log (Recommendation)", captured_output.getvalue(), height=200)
                     elif recommendation_text == "HOLD":
                         st.warning(f"**{recommendation_text}**")
                     else:
