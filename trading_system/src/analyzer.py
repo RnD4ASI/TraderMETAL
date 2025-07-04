@@ -166,7 +166,30 @@ def perform_cointegration_test(df, det_order=0, k_ar_diff=1, significance_level=
     return final_num_coint_relations
 
 
-def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str = CLEANED_DATA_DIR, verbose: bool = True):
+# Import statements
+import os
+import pandas as pd
+from typing import Dict, Any
+from auth_service import validate_user_role  # Import the authentication service
+
+def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str = CLEANED_DATA_DIR, verbose: bool = True) -> Dict[str, Any]:
+    """
+    Orchestrates the multivariate analysis process with proper role-based access control.
+    
+    Args:
+        frequency (str): Data frequency to analyze ("daily" or "weekly").
+        analysis_type (str): Type of analysis ("levels" or "returns").
+        data_dir (str): Directory where cleaned data files are stored. Defaults to CLEANED_DATA_DIR.
+        verbose (bool): If True, prints detailed logs to console.
+
+    Returns:
+        dict: A dictionary containing analysis results or error message.
+    """
+    if not validate_user_role('analyst'):
+        return {"error": "Unauthorized access. User does not have the required role."}
+
+    # Rest of the function remains unchanged
+    # ...
     """
     Orchestrates the multivariate analysis process:
     - Loads cleaned data based on specified frequency.
