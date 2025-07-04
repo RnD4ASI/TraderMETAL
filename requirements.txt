@@ -21,3 +21,10 @@ python-dateutil
 
 # Deep Learning
 tensorflow
+
+# Macroeconomic Data
+fredapi
+python-dotenv
+
+# Frontend
+streamlit

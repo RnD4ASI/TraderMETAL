@@ -12,53 +12,7 @@ TICKERS = {
 }
 MAX_YEARS_WINDOW = 10
 
-def get_user_input_for_data_fetching():
-    """
-    Prompts the user for start date, end date, and data frequency.
-    Validates the input.
-
-    Returns:
-        tuple: (start_date_str, end_date_str, interval_str) or None if input is invalid.
-    """
-    print("\n--- Data Fetching Configuration ---")
-
-    while True:
-        start_date_str = input("Enter start date (YYYY-MM-DD): ")
-        try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-            break
-        except ValueError:
-            print("Invalid start date format. Please use YYYY-MM-DD.")
-
-    while True:
-        end_date_str = input("Enter end date (YYYY-MM-DD): ")
-        try:
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-            if end_date <= start_date:
-                print("End date must be after start date.")
-            elif (end_date - start_date).days > MAX_YEARS_WINDOW * 365.25: # Approximate days in 10 years
-                print(f"The maximum time window allowed is {MAX_YEARS_WINDOW} years.")
-                print(f"Requested window: {(end_date - start_date).days / 365.25:.2f} years.")
-            elif end_date > datetime.now():
-                print("End date cannot be in the future. Setting to today.")
-                end_date = datetime.now()
-                end_date_str = end_date.strftime("%Y-%m-%d")
-                break
-            else:
-                break
-        except ValueError:
-            print("Invalid end date format. Please use YYYY-MM-DD.")
-
-    while True:
-        frequency = input("Enter data frequency (daily/weekly): ").lower()
-        if frequency in ["daily", "weekly"]:
-            interval = "1d" if frequency == "daily" else "1wk"
-            break
-        else:
-            print("Invalid frequency. Please enter 'daily' or 'weekly'.")
-
-    return start_date_str, end_date_str, interval, frequency.capitalize()
-
+# get_user_input_for_data_fetching() is removed. Inputs will be passed to run_data_crawl.
 
 def fetch_historical_data(metal_name, ticker, start_date, end_date, interval):
     """
@@ -108,32 +62,65 @@ def save_data_to_csv(df, metal_name, frequency_name):
         print(f"Error saving data for {metal_name} to CSV: {e}")
 
 
-def run_data_crawl():
+def run_data_crawl(start_date_str, end_date_str, frequency_selected):
     """
     Main function to run the data crawling process.
+    Args:
+        start_date_str (str): Start date in "YYYY-MM-DD" format.
+        end_date_str (str): End date in "YYYY-MM-DD" format.
+        frequency_selected (str): "daily" or "weekly".
     """
-    inputs = get_user_input_for_data_fetching()
-    if not inputs:
+    print(f"\n--- Data Crawling Initiated for {frequency_selected} data ---")
+    print(f"Period: {start_date_str} to {end_date_str}")
+
+    try:
+        start_date_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date_dt = datetime.strptime(end_date_str, "%Y-%m-%d")
+    except ValueError:
+        print("Invalid date format. Please use YYYY-MM-DD.")
         return
 
-    start_date, end_date, interval, freq_name = inputs
+    if end_date_dt <= start_date_dt:
+        print("End date must be after start date.")
+        return
+    if (end_date_dt - start_date_dt).days > MAX_YEARS_WINDOW * 365.25:
+        print(f"The maximum time window allowed is {MAX_YEARS_WINDOW} years.")
+        return
+    if end_date_dt > datetime.now():
+        print("End date cannot be in the future. Corrected to today.")
+        end_date_dt = datetime.now()
+        end_date_str = end_date_dt.strftime("%Y-%m-%d")
+
+    if frequency_selected not in ["daily", "weekly"]:
+        print("Invalid frequency. Please choose 'daily' or 'weekly'.")
+        return
+
+    interval = "1d" if frequency_selected == "daily" else "1wk"
+    freq_name_capitalized = frequency_selected.capitalize()
     all_data_fetched = True
 
     for metal, ticker_symbol in TICKERS.items():
-        data_df = fetch_historical_data(metal, ticker_symbol, start_date, end_date, interval)
+        data_df = fetch_historical_data(metal, ticker_symbol, start_date_str, end_date_str, interval)
         if data_df is not None and not data_df.empty:
-            save_data_to_csv(data_df, metal, freq_name)
+            save_data_to_csv(data_df, metal, freq_name_capitalized)
         else:
             print(f"Could not fetch or save data for {metal}.")
             all_data_fetched = False
 
     if all_data_fetched:
-        print("\nAll requested data has been fetched and saved successfully.")
+        print("\nAll requested metal price data has been fetched and saved successfully.")
     else:
-        print("\nSome data could not be fetched or saved. Please check the messages above.")
+        print("\nSome metal price data could not be fetched or saved. Please check the messages above.")
 
 if __name__ == "__main__":
     # This part is for testing the module directly
-    # In the main application, `run_data_crawl` would be imported and called.
     print("Running Data Crawler directly for testing...")
-    run_data_crawl()
+    # Example: Fetch 1 year of daily data
+    start_example = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+    end_example = datetime.now().strftime("%Y-%m-%d")
+    run_data_crawl(start_example, end_example, "daily")
+
+    # Example: Fetch 2 years of weekly data
+    # start_example_wk = (datetime.now() - timedelta(days=2*365)).strftime("%Y-%m-%d")
+    # end_example_wk = datetime.now().strftime("%Y-%m-%d")
+    # run_data_crawl(start_example_wk, end_example_wk, "weekly")
