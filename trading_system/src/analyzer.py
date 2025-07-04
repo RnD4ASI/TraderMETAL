@@ -166,25 +166,90 @@ def perform_cointegration_test(df, det_order=0, k_ar_diff=1, significance_level=
     return final_num_coint_relations
 
 
-def run_multivariate_analysis():
+# Import statements
+import os
+import pandas as pd
+from typing import Dict, Any
+from auth_service import validate_user_role  # Import the authentication service
+
+def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str = CLEANED_DATA_DIR, verbose: bool = True) -> Dict[str, Any]:
+    """
+    Orchestrates the multivariate analysis process with proper role-based access control.
+    
+    Args:
+        frequency (str): Data frequency to analyze ("daily" or "weekly").
+        analysis_type (str): Type of analysis ("levels" or "returns").
+        data_dir (str): Directory where cleaned data files are stored. Defaults to CLEANED_DATA_DIR.
+        verbose (bool): If True, prints detailed logs to console.
+
+    Returns:
+        dict: A dictionary containing analysis results or error message.
+    """
+    if not validate_user_role('analyst'):
+        return {"error": "Unauthorized access. User does not have the required role."}
+
+    # Rest of the function remains unchanged
+    # ...
     """
     Orchestrates the multivariate analysis process:
-    - Loads cleaned data.
-    - Prompts user for levels or returns.
+    - Loads cleaned data based on specified frequency.
+    - Performs analysis based on specified type (levels or returns).
     - Performs stationarity tests.
     - Performs cointegration test (if levels are chosen).
-    - Prints summary and guidance for next modeling steps.
-    """
-    print("\n--- Multivariate Analysis ---")
+    - Prints summary and guidance for next modeling steps if verbose is True.
 
-    while True:
-        frequency = input("Enter data frequency of cleaned file to analyze (daily/weekly): ").lower()
-        if frequency in ["daily", "weekly"]:
-            break
-        else:
-            print("Invalid frequency. Please enter 'daily' or 'weekly'.")
+    Args:
+        frequency (str): Data frequency to analyze ("daily" or "weekly").
+        analysis_type (str): Type of analysis ("levels" or "returns").
+        data_dir (str): Directory where cleaned data files are stored. Defaults to CLEANED_DATA_DIR.
+        verbose (bool): If True, prints detailed logs to console.
+
+    Returns:
+        dict: A dictionary containing analysis results (stationarity, cointegration).
+              Returns None if critical errors occur (e.g., file not found).
+    """
+    if verbose:
+        print("\n--- Multivariate Analysis ---")
+
+    if frequency not in ["daily", "weekly"]:
+        if verbose:
+            print(f"Invalid frequency: {frequency}. Please use 'daily' or 'weekly'.")
+        # Consider raising an error or returning a specific failure indicator
+        return {"error": f"Invalid frequency: {frequency}. Please use 'daily' or 'weekly'."}
+
+    if analysis_type not in ["levels", "returns"]:
+        if verbose:
+            print(f"Invalid analysis_type: {analysis_type}. Please use 'levels' or 'returns'.")
+        return {"error": f"Invalid analysis_type: {analysis_type}. Please use 'levels' or 'returns'."}
 
     cleaned_filename = f"cleaned_combined_{frequency.lower()}_prices.csv"
+# Import os.path for secure path handling
+# Import pathlib for secure path validation
+import os.path
+from pathlib import Path
+
+def run_multivariate_analysis(frequency: str, analysis_type: str, data_dir: str = CLEANED_DATA_DIR, verbose: bool = True):
+    # ... (previous code remains unchanged)
+
+    cleaned_filename = f"cleaned_combined_{frequency.lower()}_prices.csv"
+    
+    # Use os.path.abspath to get the absolute path and resolve any '..' in the path
+    data_dir_abs = os.path.abspath(data_dir)
+    
+    # Use Path to create a path object and resolve to its absolute path
+    cleaned_filepath = Path(data_dir_abs).resolve() / cleaned_filename
+    
+    # Ensure the resolved path is still within the intended directory
+    if not str(cleaned_filepath).startswith(str(Path(CLEANED_DATA_DIR).resolve())):
+        print(f"Error: Invalid data directory path: {data_dir}")
+        return
+
+    if not cleaned_filepath.exists():
+        print(f"Error: Cleaned data file not found: {cleaned_filepath}")
+        print("Please run the 'fetch-data' and 'clean-data' commands first.")
+        return
+
+    # ... (rest of the code remains unchanged)
     cleaned_filepath = os.path.join(CLEANED_DATA_DIR, cleaned_filename)
 
     if not os.path.exists(cleaned_filepath):
@@ -211,15 +276,9 @@ def run_multivariate_analysis():
     df_analysis.dropna(inplace=True) # Drop any rows with NaNs in price data before analysis
 
     if df_analysis.empty:
-        print("DataFrame is empty after selecting price columns and dropping NaNs. Cannot proceed.")
-        return
-
-    while True:
-        analysis_type = input("Analyze price levels or percentage returns? (levels/returns): ").lower()
-        if analysis_type in ["levels", "returns"]:
-            break
-        else:
-            print("Invalid choice. Please enter 'levels' or 'returns'.")
+        if verbose:
+            print("DataFrame is empty after selecting price columns and dropping NaNs. Cannot proceed.")
+        return {"error": "DataFrame is empty after selecting price columns and dropping NaNs."}
 
     data_to_test = df_analysis
     if analysis_type == "returns":
@@ -286,45 +345,444 @@ def run_multivariate_analysis():
             print("Consider checking individual ADF test p-values and lag selection.")
 
     print("\nFurther modeling (VAR/VECM estimation, forecasting, IRF, Granger causality) can be implemented based on these findings.")
+    # Placeholder for returning structured results
+    return {
+        "frequency": frequency,
+        "analysis_type": analysis_type,
+        "stationarity_results": stationarity_results,
+        "cointegration_relations": num_coint_relations if analysis_type == "levels" else "N/A"
+    }
+
+
+# --- Deep Learning Forecasting (LSTM) ---
+
+def create_dataset(X, y, sequence_length=60):
+    """
+    Creates sequences and corresponding labels for LSTM model.
+    """
+    Xs, ys = [], []
+"""
+    Creates sequences and corresponding labels for LSTM model.
+    """
+    Xs = np.array([X[i:i+sequence_length] for i in range(len(X) - sequence_length)])
+    ys = y[sequence_length:]
+    return Xs, ys
+
+def build_lstm_model(sequence_length, num_features, lstm_units=50, dropout_rate=0.2):
+    """
+        Xs.append(X[i:(i + sequence_length)])
+        ys.append(y[i + sequence_length])
+    return np.array(Xs), np.array(ys)
+
+def build_lstm_model(sequence_length, num_features, lstm_units=50, dropout_rate=0.2):
+    """
+    Builds a simple LSTM model.
+    """
+    model = Sequential()
+    model.add(LSTM(units=lstm_units, return_sequences=True, input_shape=(sequence_length, num_features)))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(units=lstm_units))
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(units=1)) # Predicting a single value
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+return model
+
+def run_deep_learning_forecast(
+    data_file_path: str,
+    target_metal_ticker: str,
+    feature_columns: list[str],
+    sequence_length: int = 60,
+    forecast_horizon: int = 30,
+    epochs: int = 50,
+    batch_size: int = 32,
+    train_test_split_ratio: float = 0.8,
+    verbose: bool = True
+):
+    """
+    Orchestrates the Deep Learning (LSTM) forecasting process.
+    """
+    if verbose:
+        print("
+--- Deep Learning Forecasting (LSTM) ---")
+        print(f"Target Metal: {target_metal_ticker}, Data File: {data_file_path}")
+        print(f"Features: {feature_columns}, Sequence Length: {sequence_length}, Horizon: {forecast_horizon}")
+        print(f"Epochs: {epochs}, Batch Size: {batch_size}")
+
+    # TODO: Implement data_preparation function
+    # data = data_preparation(data_file_path, target_metal_ticker, feature_columns)
+
+    # TODO: Implement model_creation function
+    # model = model_creation(sequence_length, len(feature_columns))
+
+    # TODO: Implement model_training function
+    # trained_model, history = model_training(model, data, epochs, batch_size, train_test_split_ratio)
+
+    # TODO: Implement model_evaluation function
+    # evaluation_results = model_evaluation(trained_model, data)
+
+    # TODO: Implement forecasting function
+    # forecast = forecasting(trained_model, data, forecast_horizon)
+
+    # TODO: Implement results_compilation function
+    # return results_compilation(evaluation_results, forecast, history)
+    data_file_path: str,
+    target_metal_ticker: str, # e.g., "GOLD"
+    feature_columns: list[str], # e.g., ["GOLD_Adj_Close", "SILVER_Adj_Close", "US_CPI_YOY"]
+model.add(Dense(units=1)) # Predicting a single value
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+def run_deep_learning_forecast(
+    data_file_path: str,
+    target_metal_ticker: str, # e.g., "GOLD"
+    feature_columns: list[str], # e.g., ["GOLD_Adj_Close", "SILVER_Adj_Close", "US_CPI_YOY"]
+    sequence_length: int = None,  # Changed from 60 to None
+    forecast_horizon: int = 30, # Not directly used in simple LSTM prediction structure, but good for context
+    epochs: int = 50,
+    batch_size: int = 32,
+    train_test_split_ratio: float = 0.8,
+    verbose: bool = True
+):
+    """
+    Orchestrates the Deep Learning (LSTM) forecasting process.
+
+    Args:
+        data_file_path (str): Path to the CSV data file (e.g., "final_combined_daily_data.csv").
+        target_metal_ticker (str): The ticker of the metal to forecast (e.g., "GOLD", "SILVER").
+                                   The target column will be assumed as f"{target_metal_ticker}{ADJ_CLOSE_SUFFIX}".
+        feature_columns (list[str]): List of column names to use as features.
+                                      The target column should also be included in this list if it's to be used as a feature.
+        sequence_length (int): Number of past time steps to use for predicting the next time step. If None, it will be determined based on the data.
+        forecast_horizon (int): Number of future days to forecast (conceptual, actual LSTM predicts next step).
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        train_test_split_ratio (float): Ratio for splitting data into training and testing sets.
+    forecast_horizon: int = 30, # Not directly used in simple LSTM prediction structure, but good for context
+    epochs: int = 50,
+    batch_size: int = 32,
+    train_test_split_ratio: float = 0.8,
+    verbose: bool = True
+):
+    """
+    Orchestrates the Deep Learning (LSTM) forecasting process.
+
+    Args:
+        data_file_path (str): Path to the CSV data file (e.g., "final_combined_daily_data.csv").
+        target_metal_ticker (str): The ticker of the metal to forecast (e.g., "GOLD", "SILVER").
+                                   The target column will be assumed as f"{target_metal_ticker}{ADJ_CLOSE_SUFFIX}".
+        feature_columns (list[str]): List of column names to use as features.
+                                      The target column should also be included in this list if it's to be used as a feature.
+        sequence_length (int): Number of past time steps to use for predicting the next time step.
+        forecast_horizon (int): Number of future days to forecast (conceptual, actual LSTM predicts next step).
+        epochs (int): Number of training epochs.
+        batch_size (int): Batch size for training.
+        train_test_split_ratio (float): Ratio for splitting data into training and testing sets.
+        verbose (bool): If True, prints detailed logs.
+
+    Returns:
+        dict: A dictionary containing forecast results, metrics, or error messages.
+    """
+    if verbose:
+        print("\n--- Deep Learning Forecasting (LSTM) ---")
+        print(f"Target Metal: {target_metal_ticker}, Data File: {data_file_path}")
+        print(f"Features: {feature_columns}, Sequence Length: {sequence_length}, Horizon: {forecast_horizon}")
+        print(f"Epochs: {epochs}, Batch Size: {batch_size}")
+
+    target_column = f"{target_metal_ticker}{ADJ_CLOSE_SUFFIX}"
+    if target_column not in feature_columns:
+        if verbose:
+            print(f"Warning: Target column '{target_column}' was not explicitly in feature_columns. Assuming it's the one to predict.")
+        # It's typical for the target to also be a feature in time series LSTM.
+
+    # 1. Load Data
+    if not os.path.exists(data_file_path):
+        if verbose:
+            print(f"Error: Data file not found: {data_file_path}")
+        return {"error": f"Data file not found: {data_file_path}"}
+    try:
+        df = pd.read_csv(data_file_path, index_col='Date', parse_dates=True)
+    except Exception as e:
+        if verbose:
+            print(f"Error loading data from {data_file_path}: {e}")
+        return {"error": f"Error loading data: {e}"}
+
+    # Ensure all specified feature columns and target column exist
+    required_cols = list(set(feature_columns + [target_column]))
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        if verbose:
+            print(f"Error: The following columns are missing in the data file: {', '.join(missing_cols)}")
+        return {"error": f"Missing columns: {', '.join(missing_cols)}"}
+
+    df_features = df[feature_columns].copy()
+    df_target = df[target_column].copy()
+
+    # Handle NaNs (simple forward fill and backfill for now)
+    df_features.fillna(method='ffill', inplace=True)
+    df_features.fillna(method='bfill', inplace=True)
+    df_target.fillna(method='ffill', inplace=True)
+    df_target.fillna(method='bfill', inplace=True)
+
+    if df_features.isnull().values.any() or df_target.isnull().values.any():
+        if verbose:
+            print("Error: Data still contains NaNs after fill. LSTM cannot proceed.")
+        return {"error": "Data contains NaNs after fill. Cannot proceed."}
+
+    if len(df_features) < sequence_length + 10: # Arbitrary minimum length for meaningful train/test
+        if verbose:
+            print(f"Error: Insufficient data for sequence length {sequence_length}. Need at least {sequence_length + 10} data points.")
+        return {"error": "Insufficient data for the given sequence length."}
+
+
+    # 2. Scale Data
+    scaler_features = MinMaxScaler(feature_range=(0, 1))
+    scaled_features = scaler_features.fit_transform(df_features)
+
+    scaler_target = MinMaxScaler(feature_range=(0, 1))
+    scaled_target = scaler_target.fit_transform(df_target.values.reshape(-1,1)) # Target is single column
+
+    # 3. Create Sequences
+    X, y = create_dataset(scaled_features, scaled_target.flatten(), sequence_length)
+    if X.shape[0] == 0:
+        if verbose:
+            print(f"Error: Not enough data to create sequences with length {sequence_length}. (X shape: {X.shape})")
+        return {"error": "Not enough data to create sequences."}
+
+
+    # 4. Split Data
+    split_index = int(X.shape[0] * train_test_split_ratio)
+    X_train, X_test = X[:split_index], X[split_index:]
+    y_train, y_test = y[:split_index], y[split_index:]
+
+    if X_train.shape[0] == 0 or X_test.shape[0] == 0:
+        if verbose:
+            print(f"Error: Not enough data for training or testing after split. Train shape: {X_train.shape}, Test shape: {X_test.shape}")
+        return {"error": "Not enough data for training or testing after split."}
+
+
+    # 5. Build and Train LSTM Model
+    if verbose:
+        print(f"Building LSTM model... Input shape for LSTM: {X_train.shape[1:]}")
+    model = build_lstm_model(sequence_length=X_train.shape[1], num_features=X_train.shape[2])
+
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+    if verbose:
+        print("Training LSTM model...")
+if verbose:
+        print("Training LSTM model...")
+    try:
+        history = model.fit(
+            X_train, y_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_split=0.1, # Use 10% of training data for validation during training
+            callbacks=[early_stopping],
+            verbose=1 if verbose else 0
+        )
+
+        # 6. Evaluate Model
+        if verbose:
+            print("Evaluating model...")
+        predictions_scaled = model.predict(X_test)
+        predictions = scaler_target.inverse_transform(predictions_scaled)
+        y_test_inversed = scaler_target.inverse_transform(y_test.reshape(-1,1))
+
+        rmse = np.sqrt(mean_squared_error(y_test_inversed, predictions))
+        mae = mean_absolute_error(y_test_inversed, predictions)
+
+        if verbose:
+            print(f"Test RMSE: {rmse:.4f}")
+            print(f"Test MAE: {mae:.4f}")
+    except Exception as e:
+        if verbose:
+            print(f"Error during model training or evaluation: {str(e)}")
+        return {"error": f"Model training or evaluation failed: {str(e)}"}
+
+    # 7. Make Future Forecast (simple version: predict next N steps iteratively)
+    # This is a simplified way and has limitations (error accumulation)
+        X_train, y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_split=0.1, # Use 10% of training data for validation during training
+        callbacks=[early_stopping],
+        verbose=1 if verbose else 0
+    )
+
+    # 6. Evaluate Model
+    if verbose:
+        print("Evaluating model...")
+    predictions_scaled = model.predict(X_test)
+    predictions = scaler_target.inverse_transform(predictions_scaled)
+    y_test_inversed = scaler_target.inverse_transform(y_test.reshape(-1,1))
+
+    rmse = np.sqrt(mean_squared_error(y_test_inversed, predictions))
+    mae = mean_absolute_error(y_test_inversed, predictions)
+
+    if verbose:
+        print(f"Test RMSE: {rmse:.4f}")
+        print(f"Test MAE: {mae:.4f}")
+
+    # 7. Make Future Forecast (simple version: predict next N steps iteratively)
+    # This is a simplified way and has limitations (error accumulation)
+    # For a proper horizon forecast, the model or data prep might need adjustment.
+    last_sequence = scaled_features[-sequence_length:]
+    forecast_scaled = []
+    current_sequence = last_sequence.reshape(1, sequence_length, scaled_features.shape[1])
+
+    for _ in range(forecast_horizon):
+        next_pred_scaled = model.predict(current_sequence)[0,0] # Get single value
+        forecast_scaled.append(next_pred_scaled)
+
+        # Create new input for next prediction:
+        # This is tricky as we only predicted the target variable.
+        # If other features are used, we'd need to predict them too or use assumptions.
+        # For simplicity, let's assume a naive forecast for other features (e.g., they stay constant or follow a trend)
+        # A more robust way is to only use lagged values of the target as features, or use a multi-output model.
+        # Here, we'll just append the predicted target and roll the window. This is a strong simplification
+        # if multiple features are used.
+
+        # This simplified forecast loop assumes the target variable is the first feature,
+        # or that the model structure is designed for single-feature input derived from multi-feature context.
+        # For a multi-feature input model, this forecast loop is naive.
+        # A proper multi-step forecast with multi-feature inputs is more complex.
+
+        # Let's assume for this scaffold the features for the next step are just rolled,
+        # with the new prediction replacing the target variable's part in the sequence.
+        # This part is highly dependent on how features are structured and if the model is univariate or multivariate.
+        # Given `feature_columns` can be multiple, this naive loop is problematic.
+        # For now, this part will be a placeholder for actual multi-step forecasting logic.
+
+        # Simplification: We'll just use the model to predict one step ahead of the test set for demonstration.
+        # A proper multi-step forecast for `forecast_horizon` requires more careful handling.
+        pass # Placeholder for proper multi-step forecasting
+
+    # For now, let's return the last prediction as 'next_day_forecast'
+    # And the test set predictions.
+    last_actual_date = df_target.index[-1]
+    forecast_dates_test = df_target.index[split_index + sequence_length:]
+
+    # Generating future dates for the forecast_horizon (conceptual)
+    future_forecast_dates = pd.date_range(start=last_actual_date + pd.Timedelta(days=1), periods=forecast_horizon, freq=df.index.freqstr or 'B')
+
+
+    # This is a placeholder for what the actual 'forecast_horizon' predictions would be
+    # For now, we'll just show the last prediction made on the test set.
+    # A real multi-step forecast would involve iterative prediction or a model designed for multi-step output.
+    future_predictions_placeholder = ["TODO: Implement multi-step forecast"] * forecast_horizon
+    if len(predictions) > 0:
+        future_predictions_placeholder = [predictions[-1][0]] * forecast_horizon # Naive: assume last prediction holds
+
+
+    if verbose:
+        print(f"Last actual value ({target_column} on {last_actual_date.strftime('%Y-%m-%d')}): {df_target.iloc[-1]:.2f}")
+        if len(predictions) > 0:
+             print(f"Example prediction (last from test set, for date {forecast_dates_test[-1].strftime('%Y-%m-%d')}): {predictions[-1][0]:.2f}")
+        print(f"Conceptual forecast for next {forecast_horizon} periods: {future_predictions_placeholder[:3]}...")
+
+
+    return {
+        "message": "LSTM forecast process completed.",
+        "target_metal": target_metal_ticker,
+        "rmse": rmse,
+        "mae": mae,
+        "test_predictions": predictions.tolist() if isinstance(predictions, np.ndarray) else predictions,
+        "test_actual_values": y_test_inversed.tolist() if isinstance(y_test_inversed, np.ndarray) else y_test_inversed,
+        "test_dates": [d.strftime('%Y-%m-%d') for d in forecast_dates_test],
+        "conceptual_future_forecast": future_predictions_placeholder,
+        "conceptual_future_dates": [d.strftime('%Y-%m-%d') for d in future_forecast_dates],
+        "model_summary": model.summary(print_fn=lambda x: x) # Get summary as string
+    }
 
 
 if __name__ == "__main__":
     # This block is for testing the analyzer module directly.
-    # It assumes that 'cleaned_combined_daily_prices.csv' or 'cleaned_combined_weekly_prices.csv'
-    # exists in the CLEANED_DATA_DIR (which is 'data/').
-    # You would typically run data_crawler and data_cleanser first.
+    # It assumes that data files exist in the CLEANED_DATA_DIR or MERGED_DATA_DIR (typically 'trading_system/data/').
+    # You would typically run data fetching and cleansing steps first.
 
-    print("Running Analyzer module directly for testing multivariate functions...")
+    print("--- Running Analyzer module directly for testing ---")
 
-    # To make this runnable, let's create a dummy cleaned file if it doesn't exist
-    dummy_cleaned_file_path = os.path.join(CLEANED_DATA_DIR, "cleaned_combined_daily_prices.csv")
-    if not os.path.exists(dummy_cleaned_file_path):
-        print(f"Dummy file {dummy_cleaned_file_path} not found. Creating one for test.")
-        if not os.path.exists(CLEANED_DATA_DIR):
-            os.makedirs(CLEANED_DATA_DIR)
+    # Ensure CLEANED_DATA_DIR exists
+    if not os.path.exists(CLEANED_DATA_DIR):
+        os.makedirs(CLEANED_DATA_DIR)
+        print(f"Created directory: {CLEANED_DATA_DIR}")
 
-        dates = pd.date_range(start='2022-01-01', periods=100, freq='B') # Approx 100 business days
-        data = {
-            'GOLD_Adj_Close': [1800 + i + 10 * (i//20) + (j*0.1 if j % 2 == 0 else -j*0.1) for i,j in enumerate(range(100))], # Trend + noise
-            'GOLD_Volume': [100000 + i*100 for i in range(100)],
-            'SILVER_Adj_Close': [22 + 0.05 * i + 5 * (i//25) + (j*0.05 if j % 3 == 0 else -j*0.05) for i,j in enumerate(range(100))], # Different trend + noise
-            'SILVER_Volume': [500000 + i*50 for i in range(100)],
-            'PLATINUM_Adj_Close': [1000 + 0.5 * i + (-1)**i * 2 + (j*0.08 if j % 2 != 0 else -j*0.08) for i,j in enumerate(range(100))], # Another pattern
-            'PLATINUM_Volume': [20000 + i*20 for i in range(100)]
+    # --- Test Multivariate Analysis ---
+    print("\n--- Testing Multivariate Analysis ---")
+    dummy_cleaned_file_path_mv = os.path.join(CLEANED_DATA_DIR, "cleaned_combined_daily_prices.csv")
+    if not os.path.exists(dummy_cleaned_file_path_mv):
+        print(f"Dummy file for multivariate test ({dummy_cleaned_file_path_mv}) not found. Creating one.")
+        dates_mv = pd.date_range(start='2020-01-01', periods=200, freq='B')
+        data_mv = {
+            'GOLD_Adj_Close': np.random.rand(200) * 100 + 1800 + np.arange(200) * 0.5,
+            'SILVER_Adj_Close': np.random.rand(200) * 10 + 20 + np.arange(200) * 0.1,
+            'PLATINUM_Adj_Close': np.random.rand(200) * 50 + 1000 + np.arange(200) * 0.2,
         }
-        # Introduce some cointegration-like behavior for GOLD and SILVER for test
-        data['SILVER_Adj_Close'] = [g * (22/1800) + 2*((-1)**i) for i,g in enumerate(data['GOLD_Adj_Close'])]
+        # Simulate some cointegration
+        data_mv['SILVER_Adj_Close'] = data_mv['GOLD_Adj_Close'] * (20/1800) + np.random.rand(200)*2
+        dummy_df_mv = pd.DataFrame(data_mv, index=dates_mv)
+        dummy_df_mv.index.name = 'Date'
+        dummy_df_mv.iloc[10:15, 0] = np.nan # Add some NaNs
+        dummy_df_mv.to_csv(dummy_cleaned_file_path_mv)
+        print(f"Dummy file created: {dummy_cleaned_file_path_mv}")
 
-        dummy_df = pd.DataFrame(data, index=dates)
-        dummy_df.index.name = 'Date'
-        # Add some NaNs to test handling
-        dummy_df.loc[dummy_df.index[10], 'GOLD_Adj_Close'] = pd.NA
-        dummy_df.loc[dummy_df.index[20], 'SILVER_Adj_Close'] = pd.NA
+    print("\nRunning Multivariate Analysis (Levels, Daily):")
+    mv_results_levels = run_multivariate_analysis(frequency="daily", analysis_type="levels", data_dir=CLEANED_DATA_DIR, verbose=True)
+    # print(f"Multivariate Analysis (Levels) Results: {mv_results_levels}")
 
-        dummy_df.to_csv(dummy_cleaned_file_path)
-        print(f"Dummy file {dummy_cleaned_file_path} created.")
+    print("\nRunning Multivariate Analysis (Returns, Daily):")
+    mv_results_returns = run_multivariate_analysis(frequency="daily", analysis_type="returns", data_dir=CLEANED_DATA_DIR, verbose=True)
+    # print(f"Multivariate Analysis (Returns) Results: {mv_results_returns}")
 
-    run_multivariate_analysis()
-    # To test deep learning part (if dummy file is suitable or if you fetch real data first):
-    # print("\nRunning Analyzer module directly for testing deep learning functions...")
-    # run_deep_learning_forecast() # This would require more setup for dummy data or real data
+
+    # --- Test Deep Learning Forecasting ---
+    print("\n\n--- Testing Deep Learning Forecasting ---")
+    # This uses a different data file, typically one that includes macro data (final_combined_...)
+    # For simplicity in this test script, we'll reuse CLEANED_DATA_DIR, but in practice, it might be MERGED_DATA_DIR.
+    # Let's assume the DL function can run on a "cleaned" file too if features are just prices.
+
+    # For DL, we often use a file that might be named "final_combined_daily_data.csv"
+    # Let's create a dummy version of that if it doesn't exist in CLEANED_DATA_DIR for testing purposes
+    dummy_final_data_path_dl = os.path.join(CLEANED_DATA_DIR, "final_combined_daily_data.csv")
+
+    if not os.path.exists(dummy_final_data_path_dl):
+        print(f"Dummy file for DL test ({dummy_final_data_path_dl}) not found. Creating one.")
+        dates_dl = pd.date_range(start='2020-01-01', periods=300, freq='B') # More data for DL
+        data_dl = {
+            'GOLD_Adj_Close': np.random.rand(300) * 100 + 1700 + np.arange(300) * 0.3,
+            'SILVER_Adj_Close': np.random.rand(300) * 10 + 18 + np.arange(300) * 0.05,
+            'PLATINUM_Adj_Close': np.random.rand(300) * 50 + 900 + np.arange(300) * 0.1,
+            'US_CPI_YOY': np.random.rand(300) * 2 + 1.5, # Dummy macro feature
+            'US_REAL_GDP_YOY': np.random.rand(300) * 1 + 2.0 # Dummy macro feature
+        }
+        dummy_df_dl = pd.DataFrame(data_dl, index=dates_dl)
+        dummy_df_dl.index.name = 'Date'
+        dummy_df_dl.iloc[20:25, 0] = np.nan # Add some NaNs
+        dummy_df_dl.iloc[30:35, 3] = np.nan
+        dummy_df_dl.to_csv(dummy_final_data_path_dl)
+        print(f"Dummy file created: {dummy_final_data_path_dl}")
+
+    print("\nRunning Deep Learning Forecast (GOLD, Daily):")
+    # Ensure feature_columns exist in the dummy_final_data_path_dl
+    dl_feature_cols = ['GOLD_Adj_Close', 'SILVER_Adj_Close', 'US_CPI_YOY']
+    dl_results = run_deep_learning_forecast(
+        data_file_path=dummy_final_data_path_dl,
+        target_metal_ticker="GOLD",
+        feature_columns=dl_feature_cols,
+        sequence_length=30, # Shorter for faster test
+        forecast_horizon=7,
+        epochs=2, # Minimal epochs for quick test
+        batch_size=16,
+        verbose=True
+    )
+    # print(f"Deep Learning Forecast Results: {dl_results}")
+    if dl_results and "error" not in dl_results:
+        print(f"DL RMSE: {dl_results.get('rmse')}")
+        print(f"DL MAE: {dl_results.get('mae')}")
+        # print(f"DL Model Summary: \n{dl_results.get('model_summary')}")
+    elif dl_results:
+        print(f"DL Error: {dl_results.get('error')}")
+
+    print("\n--- Analyzer module testing complete ---")
