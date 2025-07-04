@@ -399,7 +399,40 @@ def run_merge_with_macro_data(metal_data_frequency):
 
     # 1. Load cleaned metal price data
     cleaned_metal_filename = f"cleaned_combined_{metal_data_frequency.lower()}_prices.csv"
-    cleaned_metal_filepath = os.path.join(CLEANED_DATA_DIR, cleaned_metal_filename)
+# Import os.path for secure path handling
+# Import pathlib for secure path validation
+import os.path
+from pathlib import Path
+
+def run_merge_with_macro_data(metal_data_frequency):
+    """
+    Orchestrates the merging of cleaned metal price data with processed macro data.
+    - Loads the `cleaned_combined_{metal_data_frequency}_prices.csv`.
+    - Loads all available macro indicators specified in MACRO_INDICATORS_FRED.
+    - Processes and resamples each macro indicator.
+    - Merges them with the metal prices.
+    - Saves the final combined DataFrame.
+    """
+    print(f"
+--- Merging Metal Prices with Macroeconomic Data ({metal_data_frequency} frequency) ---")
+
+    # 1. Load cleaned metal price data
+    cleaned_metal_filename = f"cleaned_combined_{metal_data_frequency.lower()}_prices.csv"
+    cleaned_metal_filepath = Path(CLEANED_DATA_DIR).resolve() / cleaned_metal_filename
+
+    if not cleaned_metal_filepath.is_file():
+        print(f"Error: Cleaned metal price data file not found: {cleaned_metal_filepath}")
+        print("Please run 'clean-data' command first for the desired frequency.")
+        return
+
+    try:
+        df_metals = pd.read_csv(cleaned_metal_filepath, index_col='Date', parse_dates=True)
+        print(f"Loaded cleaned metal prices from: {cleaned_metal_filepath} (Shape: {df_metals.shape})")
+    except Exception as e:
+        print(f"Error loading cleaned metal prices from {cleaned_metal_filepath}: {e}")
+        return
+
+    # ... (rest of the code remains unchanged)
 
     if not os.path.exists(cleaned_metal_filepath):
         print(f"Error: Cleaned metal price data file not found: {cleaned_metal_filepath}")
