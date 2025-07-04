@@ -327,7 +327,12 @@ st.markdown("*Remember that financial forecasts are inherently uncertain. These 
             if 'Date' in all_columns: # Assuming 'Date' is index and not a feature
                 all_columns.remove('Date')
         except Exception as e:
-            st.error(f"Could not read columns from {selected_dl_data_file}: {e}")
+if 'Date' in all_columns: # Assuming 'Date' is index and not a feature
+                all_columns.remove('Date')
+        except Exception as e:
+            # import html
+            st.error(f"Could not read columns from {selected_dl_data_file}: {html.escape(str(e))}") # Sanitize error message
+            all_columns = [f"{t}{ADJ_CLOSE_SUFFIX}" for t in TICKERS_LIST] # Fallback
             all_columns = [f"{t}{ADJ_CLOSE_SUFFIX}" for t in TICKERS_LIST] # Fallback
 
 
