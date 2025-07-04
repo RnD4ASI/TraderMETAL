@@ -143,7 +143,11 @@ with st.expander("Merge Data", expanded=False):
 st.sidebar.info("💡 Tip: Run these steps in order. Ensure data is fetched before cleaning, and cleaned/fetched before merging.")
 
 # Need to import pandas for date conversions if not already
+import streamlit as st
+import sys
+import os
+from io import StringIO
+from contextlib import contextmanager
 import pandas as pd
-# This is a common import, ensure it's available.
 # If it's not used directly in this file after refactoring, it's fine.
 # It was used for pd.to_datetime in date_input values.
