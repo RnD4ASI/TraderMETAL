@@ -103,7 +103,197 @@ with st.expander("Run Multivariate Analysis", expanded=True):
 
 # --- Section 2: Deep Learning Forecasting (LSTM) ---
 st.header("2. Deep Learning Forecasting (LSTM)")
+# --- Section 2: Deep Learning Forecasting (LSTM) ---
+st.header("2. Deep Learning Forecasting (LSTM)")
 with st.expander("Run LSTM Forecast", expanded=False):
+    st.markdown("""
+    Train an LSTM (Long Short-Term Memory) neural network for forecasting a target metal's price.
+    This uses a `final_combined_<frequency>_data.csv` file, which should include market prices and
+    any macroeconomic features you wish to use.
+    **Note:** This feature requires TensorFlow and can be computationally intensive.
+    """)
+
+    def load_data_files():
+        available_dl_data_files = []
+        if os.path.exists(MERGED_DATA_DIR):
+            available_dl_data_files = sorted([f for f in os.listdir(MERGED_DATA_DIR) if f.startswith("final_combined_") and f.endswith(".csv")], reverse=True)
+        
+        if not available_dl_data_files:
+            st.warning(f"No merged data files (e.g., `final_combined_daily_data.csv`) found in `{MERGED_DATA_DIR}`. Please run 'Data Management' steps to create one for DL forecasting.")
+        
+        return available_dl_data_files
+
+    def select_data_file(available_files):
+        return st.selectbox(
+            "Select Merged Data File for LSTM:",
+            available_files,
+            key="dl_data_file",
+            help="Choose the dataset (typically including macro features) for training the LSTM."
+        )
+
+    def load_columns(selected_file):
+        all_columns = []
+        if selected_file:
+            try:
+                dl_df_path = os.path.join(MERGED_DATA_DIR, selected_file)
+                temp_df = pd.read_csv(dl_df_path, nrows=1)
+                all_columns = temp_df.columns.tolist()
+                if 'Date' in all_columns:
+                    all_columns.remove('Date')
+            except Exception as e:
+                st.error(f"Could not read columns from {selected_file}: {e}")
+                all_columns = [f"{t}{ADJ_CLOSE_SUFFIX}" for t in TICKERS_LIST]
+        return all_columns
+
+    def select_model_parameters():
+        col_dl1, col_dl2 = st.columns(2)
+        with col_dl1:
+            dl_target_metal = st.selectbox(
+                "Target Metal to Forecast:",
+                TICKERS_LIST,
+                key="dl_target_metal",
+                help="Select the metal whose price you want to forecast."
+            )
+            dl_epochs = st.number_input("Training Epochs:", min_value=1, max_value=200, value=20, step=1, key="dl_epochs")
+            dl_batch_size = st.number_input("Batch Size:", min_value=8, max_value=128, value=32, step=8, key="dl_batch_size")
+
+        with col_dl2:
+            dl_sequence_length = st.number_input("Sequence Length (Lookback Window):", min_value=10, max_value=180, value=60, step=5, key="dl_seq_len")
+            dl_forecast_horizon = st.number_input("Forecast Horizon (Days):", min_value=1, max_value=90, value=30, step=1, key="dl_horizon")
+
+        return dl_target_metal, dl_epochs, dl_batch_size, dl_sequence_length, dl_forecast_horizon
+
+    def select_features(all_columns, dl_target_metal):
+        st.markdown("**Feature Selection for LSTM:**")
+        dl_target_col_name = f"{dl_target_metal}{ADJ_CLOSE_SUFFIX}"
+        st.info(f"The target column for forecasting will be `{dl_target_col_name}`. It should also be selected as a feature if you want to use its lagged values.")
+
+        default_features = [col for col in all_columns if ADJ_CLOSE_SUFFIX in col]
+        if not default_features and all_columns:
+            default_features = all_columns[:min(3, len(all_columns))]
+
+        return st.multiselect(
+            "Select Feature Columns for LSTM model:",
+            options=all_columns,
+            default=default_features,
+            key="dl_features",
+            help="Choose columns to use as input features. Include the target column if using its history."
+        )
+
+    def run_lstm_forecast(data_file_full_path, dl_target_metal, dl_feature_columns, dl_sequence_length, dl_forecast_horizon, dl_epochs, dl_batch_size):
+        st.info(f"Starting LSTM forecast for {dl_target_metal} using {os.path.basename(data_file_full_path)}...")
+        st.info(f"Features: {dl_feature_columns}")
+        st.info(f"Params: Seq Len={dl_sequence_length}, Horizon={dl_forecast_horizon}, Epochs={dl_epochs}, Batch={dl_batch_size}")
+
+        with st.spinner("Training LSTM model... this can take a significant amount of time."):
+            with st_capture_stdout() as captured_dl_output:
+                try:
+                    import tensorflow
+
+                    dl_results = analyzer.run_deep_learning_forecast(
+                        data_file_path=data_file_full_path,
+                        target_metal_ticker=dl_target_metal,
+                        feature_columns=dl_feature_columns,
+                        sequence_length=dl_sequence_length,
+                        forecast_horizon=dl_forecast_horizon,
+                        epochs=dl_epochs,
+                        batch_size=dl_batch_size,
+                        verbose=True
+                    )
+
+                    display_lstm_results(dl_results, dl_target_metal)
+
+                except ImportError:
+                    st.error("TensorFlow library not found. Please install it to use this feature: `pip install tensorflow`")
+                except Exception as e:
+                    st.error(f"An unexpected error occurred during LSTM forecasting: {str(e)}")
+
+            log_output_dl = captured_dl_output.getvalue()
+            if log_output_dl:
+                with st.expander("Show Full Log Output (LSTM Forecast)", expanded=False):
+                    st.text_area("", log_output_dl, height=400)
+
+    def display_lstm_results(dl_results, dl_target_metal):
+        if dl_results and "error" in dl_results:
+            st.error(f"LSTM Forecast Error: {dl_results['error']}")
+        elif dl_results:
+            st.success("LSTM Forecasting complete!")
+            st.subheader(f"Forecast Results for {dl_results.get('target_metal', 'N/A')}")
+
+            col_metric1, col_metric2 = st.columns(2)
+            col_metric1.metric("Test RMSE", f"{dl_results.get('rmse', 0):.4f}")
+            col_metric2.metric("Test MAE", f"{dl_results.get('mae', 0):.4f}")
+
+            plot_test_predictions(dl_results)
+            display_future_forecast(dl_results, dl_target_metal)
+
+            with st.expander("View Model Summary"):
+                model_summary_str = dl_results.get("model_summary", "Not available.")
+                st.text(model_summary_str)
+        else:
+            st.warning("LSTM forecast did not return any results. Check logs.")
+
+    def plot_test_predictions(dl_results):
+        test_actual = dl_results.get('test_actual_values')
+        test_preds = dl_results.get('test_predictions')
+        test_dates_str = dl_results.get('test_dates')
+
+        if test_actual and test_preds and test_dates_str:
+            try:
+                test_dates = [pd.to_datetime(d) for d in test_dates_str]
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=test_dates, y=np.array(test_actual).flatten(), mode='lines', name='Actual Test Values'))
+                fig.add_trace(go.Scatter(x=test_dates, y=np.array(test_preds).flatten(), mode='lines', name='Predicted Test Values'))
+                fig.update_layout(title='LSTM: Actual vs. Predicted Values (Test Set)',
+                                  xaxis_title='Date', yaxis_title='Price')
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as plot_err:
+                st.warning(f"Could not plot test predictions: {plot_err}")
+
+    def display_future_forecast(dl_results, dl_target_metal):
+        future_forecast = dl_results.get('conceptual_future_forecast')
+        future_dates_str = dl_results.get('conceptual_future_dates')
+        if future_forecast and future_dates_str:
+            try:
+                future_dates = [pd.to_datetime(d) for d in future_dates_str]
+                st.subheader(f"Conceptual Forecast for next {len(future_forecast)} periods")
+
+                df_future = pd.DataFrame({'Date': future_dates, 'Forecast': future_forecast})
+                st.dataframe(df_future.set_index('Date'))
+
+                fig_future = go.Figure()
+                fig_future.add_trace(go.Scatter(x=future_dates, y=future_forecast, mode='lines+markers', name='Conceptual Future Forecast'))
+                fig_future.update_layout(title=f'LSTM: Conceptual Future Forecast for {dl_target_metal}',
+                                         xaxis_title='Date', yaxis_title='Forecasted Price')
+                st.plotly_chart(fig_future, use_container_width=True)
+            except Exception as plot_err:
+                st.warning(f"Could not display future forecast data: {plot_err}")
+        else:
+            st.info("Conceptual future forecast data not available or not generated by the backend.")
+
+    available_files = load_data_files()
+    selected_file = select_data_file(available_files)
+    all_columns = load_columns(selected_file)
+    dl_target_metal, dl_epochs, dl_batch_size, dl_sequence_length, dl_forecast_horizon = select_model_parameters()
+    dl_feature_columns = select_features(all_columns, dl_target_metal)
+
+    if st.button("Run Deep Learning Forecast (LSTM)", key="run_dl_btn"):
+        if not selected_file:
+            st.error("Please select a data file for LSTM forecasting.")
+        elif not dl_target_metal:
+            st.error("Please select a target metal to forecast.")
+        elif not dl_feature_columns:
+            st.error("Please select at least one feature column for the LSTM.")
+        elif f"{dl_target_metal}{ADJ_CLOSE_SUFFIX}" not in dl_feature_columns:
+            st.warning(f"The target column '{dl_target_metal}{ADJ_CLOSE_SUFFIX}' is not in your selected features. It's often beneficial to include it. Proceeding anyway.")
+        else:
+            data_file_full_path = os.path.join(MERGED_DATA_DIR, selected_file)
+            run_lstm_forecast(data_file_full_path, dl_target_metal, dl_feature_columns, dl_sequence_length, dl_forecast_horizon, dl_epochs, dl_batch_size)
+
+st.sidebar.info("🔬 Use statistical and machine learning models to analyze data properties and generate forecasts.")
+st.markdown("---")
+st.markdown("*Remember that financial forecasts are inherently uncertain. These tools are for analysis and exploration.*")
     st.markdown("""
     Train an LSTM (Long Short-Term Memory) neural network for forecasting a target metal's price.
     This uses a `final_combined_<frequency>_data.csv` file, which should include market prices and
