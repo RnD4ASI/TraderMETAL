@@ -60,7 +60,16 @@ def calculate_max_drawdown(portfolio_values):
     # Calculate the cumulative maximum value up to each point
     cumulative_max = portfolio_values.cummax()
     # Calculate drawdowns from the cumulative maximum
-    drawdowns = (portfolio_values - cumulative_max) / cumulative_max
+# Calculate the cumulative maximum value up to each point
+    cumulative_max = portfolio_values.cummax()
+    # Calculate drawdowns from the cumulative maximum
+    drawdowns = np.where(cumulative_max != 0, (portfolio_values - cumulative_max) / cumulative_max, 0)
+    # Get the minimum (largest negative) drawdown
+    max_dd = np.min(drawdowns)
+    return max_dd if not np.isnan(max_dd) else 0.0
+
+
+# --- Simple SMA Crossover Strategy ---
     # Get the minimum (largest negative) drawdown
     max_dd = drawdowns.min()
     return max_dd if not pd.isna(max_dd) else 0.0
