@@ -520,7 +520,30 @@ def run_merge_with_macro_data(metal_data_frequency):
 
     # 4. Save the final merged DataFrame
     output_filename = f"final_combined_{metal_data_frequency.lower()}_data.csv"
-    output_filepath = os.path.join(MERGED_DATA_DIR, output_filename)
+# Import os.path for secure path handling
+# Import pathlib for secure path manipulation
+import os.path
+from pathlib import Path
+
+def run_merge_with_macro_data(metal_data_frequency):
+    # ... (previous code remains unchanged)
+
+    # 4. Save the final merged DataFrame
+    output_filename = f"final_combined_{metal_data_frequency.lower()}_data.csv"
+    merged_data_dir = Path(MERGED_DATA_DIR)
+    output_filepath = merged_data_dir.joinpath(output_filename).resolve()
+    
+    if not output_filepath.is_relative_to(merged_data_dir):
+        print(f"Error: Invalid output file path: {output_filepath}")
+        return
+
+    try:
+        df_final_merged.to_csv(output_filepath)
+        print(f"
+Successfully saved final merged data (metals + macro) to: {output_filepath}")
+        # ... (rest of the code remains unchanged)
+    except Exception as e:
+        print(f"Error saving final merged data to {output_filepath}: {e}")
 
     try:
         df_final_merged.to_csv(output_filepath)
